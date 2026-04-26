@@ -84,9 +84,9 @@ function AboutPage() {
             <div className="flex flex-col sm:flex-row items-center gap-6 mt-4">
               <div className="bg-white p-2 rounded-lg shrink-0">
                 <img 
-                  src="/src/public/images/bidv.webp" 
-                  alt="BIDV Logo" 
-                  className="h-12 w-auto object-contain"
+                  src="/vibe.jpg" 
+                  alt="QR Code" 
+                  className="h-32 w-auto object-contain"
                 />
               </div>
               <div className="text-center sm:text-left">
