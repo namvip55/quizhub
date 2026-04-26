@@ -1,5 +1,5 @@
 name = "quizhub"
-compatibility_date = "2025-04-01"
+compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist/client"
 
@@ -11,4 +11,4 @@ pages_build_output_dir = "dist/client"
 # 4. SUPABASE_SERVICE_ROLE_KEY
 
 [vars]
-NODE_VERSION = "20"
+# NODE_VERSION will be set in the Cloudflare Dashboard to 22
