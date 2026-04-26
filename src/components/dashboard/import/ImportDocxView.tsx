@@ -107,16 +107,16 @@ export function ImportDocxView() {
     // Also handles *A. xxx (asterisk marking correct answer)
     const inlineOptionsRegex = /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))/g;
 
+    const stripHintTags = (html: string) => {
+      // Remove <mark> tags but keep their content
+      return html.replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1").trim();
+    };
+
     const tryParseInlineOptions = (text: string, htmlContent: string, hasMark: boolean): boolean => {
-      // Count how many option-like patterns exist in the text
       const matches = text.match(inlineOptionsRegex);
       if (!matches || matches.length < 2) return false;
 
-      // Split the text by option markers to extract each option
-      // Use the variable regex for splitting
       const parts = text.split(inlineOptionsRegex);
-      // parts: ["prefix/question", "A.", "content A", "B.", "content B", ...]
-
       let extracted: { label: string; content: string; isAsterisk: boolean }[] = [];
       for (let i = 1; i < parts.length; i += 2) {
         const marker = parts[i] || "";
@@ -130,16 +130,13 @@ export function ImportDocxView() {
 
       if (extracted.length < 2) return false;
 
-      // Validate sequential labels
       for (let i = 0; i < extracted.length; i++) {
         const lbl = extracted[i].label;
-        const expectedLetter = String.fromCharCode(65 + i); // A, B, C, D
-        const expectedNum = String(i + 1); // 1, 2, 3, 4
+        const expectedLetter = String.fromCharCode(65 + i);
+        const expectedNum = String(i + 1);
         if (lbl !== expectedLetter && lbl !== expectedNum) return false;
       }
 
-      // If we got here, it's a valid inline options line.
-      // If parts[0] has content, treat it as the question content.
       if (parts[0].trim().length > 0) {
         let qText = parts[0].trim();
         const qPrefixMatch = qText.match(questionRegex);
@@ -147,12 +144,12 @@ export function ImportDocxView() {
           qText = qText.replace(questionRegex, "$2").trim();
         }
         currentQ.content = qText;
-        currentQ.options = []; // Reset options for this new question line
+        currentQ.options = [];
       }
 
-      // All valid — assign to currentQ
       extracted.forEach((opt, i) => {
-        currentQ.options![i] = opt.content;
+        // Clean the option content from marks
+        currentQ.options![i] = stripHintTags(opt.content);
         if (opt.isAsterisk || hasMark) {
           if (opt.isAsterisk) currentQ.correct_answer = i;
         }
@@ -221,14 +218,14 @@ export function ImportDocxView() {
       }
 
       if (matchedAsOption) {
-        // Keep HTML in options to support images
-        currentQ.options![optIdx] = htmlContent.replace(optionRegex, "$3");
+        // Clean HTML from hints but keep structures
+        currentQ.options![optIdx] = stripHintTags(htmlContent.replace(optionRegex, "$3"));
         isExplaining = false;
         
         if (hasMark || isAsterisk) currentQ.correct_answer = optIdx;
       } else if (isBareAsterisk && currentQ.content && currentQ.options!.length < 4) {
-        // Bare * line — treat as the next option and mark it correct
-        const optContent = htmlContent.replace(/^\*\s*/, "");
+        // Bare * line — clean it up
+        const optContent = stripHintTags(htmlContent.replace(/^\*\s*/, ""));
         const nextIdx = currentQ.options!.length;
         currentQ.options![nextIdx] = optContent;
         currentQ.correct_answer = nextIdx;

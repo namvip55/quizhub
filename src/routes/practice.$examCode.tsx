@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 import { examService } from "@/services/exam.service";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
 import { ASSETS } from "@/constants/assets";
+import { cleanQuizText } from "@/lib/utils";
 
 const tingTingSound = ASSETS.SOUNDS.TING_TING;
 
@@ -183,7 +184,7 @@ function PracticeModeView() {
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden transition-all">
           <div className="p-6 sm:p-8">
             <h3 className="text-xl sm:text-2xl font-medium leading-relaxed whitespace-pre-wrap">
-              <div dangerouslySetInnerHTML={{ __html: currentQuestion.content }} />
+              <div dangerouslySetInnerHTML={{ __html: cleanQuizText(currentQuestion.content) }} />
             </h3>
           </div>
 
@@ -218,7 +219,7 @@ function PracticeModeView() {
                 >
                   {icon}
                   <span className="text-base sm:text-lg">
-                    <div dangerouslySetInnerHTML={{ __html: option }} className="inline-block" />
+                    <div dangerouslySetInnerHTML={{ __html: cleanQuizText(option) }} className="inline-block" />
                   </span>
                 </button>
               );
