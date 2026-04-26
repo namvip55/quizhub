@@ -12,26 +12,32 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: search.redirect as string | undefined,
+    };
+  },
   head: () => ({
     meta: [
-      { title: "Create account — QuizHub" },
-      { name: "description", content: "Create a free QuizHub account." },
+      { title: "Tạo tài khoản — QuizHub" },
+      { name: "description", content: "Tạo tài khoản QuizHub miễn phí." },
     ],
   }),
   component: RegisterPage,
 });
 
 const formSchema = z.object({
-  full_name: z.string().min(2, "Enter your full name"),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "At least 6 characters"),
+  full_name: z.string().min(2, "Vui lòng nhập họ và tên"),
+  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
   role: z.enum(["teacher", "student"]),
 });
 type FormValues = z.infer<typeof formSchema>;
 
 function RegisterPage() {
-  const { signUp, user, loading } = useAuth();
+  const { signUp, user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -39,16 +45,19 @@ function RegisterPage() {
   });
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/dashboard" });
-  }, [user, loading, navigate]);
+    if (!loading && user && profile) {
+      const dest = search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
+      navigate({ to: dest });
+    }
+  }, [user, profile, loading, navigate, search.redirect]);
 
   const onSubmit = async (values: FormValues) => {
     try {
       await signUp(values);
-      toast.success("Account created — you're signed in.");
-      navigate({ to: "/dashboard" });
+      toast.success("Tạo tài khoản thành công — bạn đã được đăng nhập.");
+      // Redirect is handled by the useEffect above once profile loads
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Sign up failed";
+      const message = err instanceof Error ? err.message : "Đăng ký thất bại";
       toast.error(message);
     }
   };
@@ -64,17 +73,15 @@ function RegisterPage() {
           </div>
           <span className="text-lg font-semibold">QuizHub</span>
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Free forever for getting started.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Tạo tài khoản</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Miễn phí sử dụng và bắt đầu dễ dàng.</p>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Full name</Label>
-            <Input id="full_name" placeholder="Jane Doe" {...form.register("full_name")} />
+            <Label htmlFor="full_name">Họ và tên</Label>
+            <Input id="full_name" placeholder="Nguyễn Văn A" {...form.register("full_name")} />
             {form.formState.errors.full_name && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.full_name.message}
-              </p>
+              <p className="text-xs text-destructive">{form.formState.errors.full_name.message}</p>
             )}
           </div>
           <div className="space-y-2">
@@ -91,7 +98,7 @@ function RegisterPage() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Mật khẩu</Label>
             <Input
               id="password"
               type="password"
@@ -100,14 +107,12 @@ function RegisterPage() {
               {...form.register("password")}
             />
             {form.formState.errors.password && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.password.message}
-              </p>
+              <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label>I am a</Label>
+            <Label>Tôi là</Label>
             <RadioGroup
               value={role}
               onValueChange={(v) => form.setValue("role", v as "teacher" | "student")}
@@ -124,7 +129,7 @@ function RegisterPage() {
                   }`}
                 >
                   <RadioGroupItem id={`role-${r}`} value={r} />
-                  {r}
+                  {r === "teacher" ? "Giáo viên" : "Học sinh"}
                 </Label>
               ))}
             </RadioGroup>
@@ -132,16 +137,16 @@ function RegisterPage() {
 
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create account
+            Đăng ký
           </Button>
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm">
           <Link to="/" className="text-muted-foreground hover:text-foreground">
-            ← Back home
+            ← Quay lại trang chủ
           </Link>
           <Link to="/login" className="text-primary hover:underline">
-            Sign in
+            Đăng nhập
           </Link>
         </div>
       </div>

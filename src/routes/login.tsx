@@ -17,8 +17,8 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — QuizHub" },
-      { name: "description", content: "Sign in to your QuizHub account." },
+      { title: "Đăng nhập — QuizHub" },
+      { name: "description", content: "Đăng nhập vào tài khoản QuizHub của bạn." },
     ],
   }),
   validateSearch: searchSchema,
@@ -26,13 +26,13 @@ export const Route = createFileRoute("/login")({
 });
 
 const formSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 });
 type FormValues = z.infer<typeof formSchema>;
 
 function LoginPage() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
 
@@ -42,18 +42,19 @@ function LoginPage() {
   });
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate({ to: search.redirect ?? "/dashboard" });
+    if (!loading && user && profile) {
+      const dest = search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
+      navigate({ to: dest });
     }
-  }, [user, loading, navigate, search.redirect]);
+  }, [user, profile, loading, navigate, search.redirect]);
 
   const onSubmit = async (values: FormValues) => {
     try {
       await signIn(values.email, values.password);
-      toast.success("Welcome back!");
-      navigate({ to: search.redirect ?? "/dashboard" });
+      toast.success("Chào mừng bạn quay lại!");
+      // Redirect is handled by the useEffect above once profile loads
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Sign in failed";
+      const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
       toast.error(message);
     }
   };
@@ -67,8 +68,8 @@ function LoginPage() {
           </div>
           <span className="text-lg font-semibold">QuizHub</span>
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sign in to continue.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Chào mừng quay lại</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Đăng nhập để tiếp tục.</p>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div className="space-y-2">
@@ -99,16 +100,16 @@ function LoginPage() {
           </div>
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
+            Đăng nhập
           </Button>
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm">
           <Link to="/" className="text-muted-foreground hover:text-foreground">
-            ← Back home
+            ← Quay lại trang chủ
           </Link>
           <Link to="/register" className="text-primary hover:underline">
-            Create account
+            Tạo tài khoản
           </Link>
         </div>
       </div>

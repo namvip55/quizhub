@@ -221,6 +221,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          subject_code: string
           teacher_id: string
           updated_at: string
         }
@@ -229,6 +230,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          subject_code?: string
           teacher_id: string
           updated_at?: string
         }
@@ -237,6 +239,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          subject_code?: string
           teacher_id?: string
           updated_at?: string
         }
@@ -244,7 +247,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_top_subjects: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          subject_code: string
+          teacher_id: string
+          created_at: string
+          attempts_count: number
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

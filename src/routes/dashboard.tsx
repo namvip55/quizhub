@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — QuizHub" },
-      { name: "description", content: "Manage your subjects, questions, exams, and results." },
+      { title: "Bảng điều khiển — QuizHub" },
+      { name: "description", content: "Quản lý môn học, câu hỏi, đề thi và kết quả của bạn." },
     ],
   }),
   component: DashboardLayout,
@@ -27,8 +28,10 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   return (
-    <AuthGuard>
-      <DashboardShell />
+    <AuthGuard requireRole="teacher">
+      <GlobalErrorBoundary>
+        <DashboardShell />
+      </GlobalErrorBoundary>
     </AuthGuard>
   );
 }
@@ -39,28 +42,28 @@ function DashboardShell() {
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success("Signed out");
+    toast.success("Đã đăng xuất");
     navigate({ to: "/" });
   };
 
-  const displayName = profile?.full_name || user?.email || "Account";
+  const displayName = profile?.full_name || user?.email || "Tài khoản";
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger />
             <div className="flex-1" />
             {profile?.role && (
               <span className="hidden rounded-full border border-border/60 bg-card px-2.5 py-0.5 text-xs capitalize text-muted-foreground sm:inline-block">
-                {profile.role}
+                {profile.role === "teacher" ? "Giáo viên" : "Học sinh"}
               </span>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Account">
+                <Button variant="ghost" size="icon" aria-label="Tài khoản">
                   <UserCircle2 className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -69,12 +72,12 @@ function DashboardShell() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
+                  Đăng xuất
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
             <Outlet />
           </main>
         </div>

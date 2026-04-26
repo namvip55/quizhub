@@ -1,24 +1,81 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, BookOpen, Timer, BarChart3, ShieldCheck, Sparkles } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
+import {
+  GraduationCap,
+  BookOpen,
+  Timer,
+  BarChart3,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "QuizHub — Run Online Exams in Minutes" },
-      {
-        name: "description",
-        content:
-          "QuizHub helps teachers build question banks, launch timed exams with secure codes, and instantly review student results.",
-      },
-    ],
-  }),
-  component: LandingPage,
-});
+export const Route = createFileRoute("/")(
+  {
+    head: () => ({
+      meta: [
+        { title: "QuizHub — Tạo Đề Thi Trực Tuyến Trong Vài Phút" },
+        {
+          name: "description",
+          content:
+            "QuizHub giúp giáo viên xây dựng ngân hàng câu hỏi, mở đề thi hẹn giờ với mã bảo mật và xem ngay kết quả của học sinh.",
+        },
+      ],
+    }),
+    component: LandingPage,
+  },
+);
 
 function LandingPage() {
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { user, profile, signOut } = useAuth();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Đăng xuất thành công");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length !== 6) {
+      toast.error("Mã bài thi phải gồm 6 ký tự");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: exam, error } = await supabase
+        .from("exams")
+        .select("*")
+        .eq("exam_code", code.toUpperCase())
+        .single();
+
+      if (error || !exam) {
+        toast.error("Mã bài thi không hợp lệ hoặc bài thi hiện không mở.");
+        setLoading(false);
+        return;
+      }
+
+      navigate({ to: "/lobby/$examCode", params: { examCode: code.toUpperCase() } });
+    } catch (err: any) {
+      toast.error(err.message || "Đã có lỗi xảy ra");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {/* ── Header ── */}
       <header className="border-b border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
@@ -28,17 +85,50 @@ function LandingPage() {
             <span className="text-lg font-semibold tracking-tight">QuizHub</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/login">Sign in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/register">Get started</Link>
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground mr-2 hidden sm:inline-block">
+                  Xin chào, {profile?.full_name || user.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: profile?.role === "teacher" ? "/dashboard/subjects" : "/student" })}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Bảng điều khiển
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/login" })}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Đăng nhập
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/register" })}
+                  className={buttonVariants({ size: "sm" })}
+                >
+                  Bắt đầu
+                </button>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
       <main>
+        {/* ── Hero + Enter Code ── */}
         <section className="relative overflow-hidden">
           <div
             aria-hidden
@@ -48,65 +138,81 @@ function LandingPage() {
                 "radial-gradient(60% 50% at 50% 0%, color-mix(in oklab, var(--primary) 30%, transparent), transparent)",
             }}
           />
-          <div className="container mx-auto px-4 py-24 text-center sm:py-32">
+          <div className="container mx-auto px-4 py-20 text-center sm:py-28">
             <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Modern online exam platform
+              Nền tảng thi trực tuyến hiện đại
             </div>
             <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-              Run secure online exams,{" "}
+              Tổ chức thi trực tuyến bảo mật,{" "}
               <span className="bg-[image:var(--gradient-primary)] bg-clip-text text-transparent">
-                effortlessly.
+                dễ dàng.
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              QuizHub gives teachers a beautiful question bank, timed exams with shareable codes,
-              and instant student analytics — all in one dashboard.
+              QuizHub cung cấp cho giáo viên ngân hàng câu hỏi đẹp mắt, bài thi có thời gian với mã chia sẻ, và phân tích kết quả học sinh ngay lập tức — tất cả trong một bảng điều khiển.
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <Link to="/register">Create free account</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/exam/$code" params={{ code: "DEMO01" }}>
-                  Take an exam with a code
-                </Link>
-              </Button>
+
+            {/* ── Enter Code Form (merged from /enter) ── */}
+            <div className="mx-auto mt-10 w-full max-w-sm">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                <Input
+                  id="exam-code"
+                  placeholder="Nhập mã bài thi 6 ký tự"
+                  className="text-center text-2xl tracking-widest uppercase h-14 bg-card border-border/60"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={loading || code.length !== 6}
+                >
+                  {loading ? "Đang kiểm tra..." : "Tham gia bài thi"}
+                  {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+              </form>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Không cần tài khoản — chỉ cần nhập mã giáo viên cung cấp.
+              </p>
             </div>
           </div>
         </section>
 
+        {/* ── Features ── */}
         <section className="container mx-auto grid gap-6 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               icon: BookOpen,
-              title: "Question banks",
-              desc: "Markdown-rich questions, four answer options, optional explanations.",
+              title: "Ngân hàng câu hỏi",
+              desc: "Hỗ trợ Markdown, 4 lựa chọn đáp án, và giải thích chi tiết.",
             },
             {
               icon: Timer,
-              title: "Timed exams",
-              desc: "Auto-submit on timeout, single-question or scroll mode, retry rules.",
+              title: "Bài thi hẹn giờ",
+              desc: "Tự động nộp khi hết giờ, làm từng câu hoặc cuộn, có luật làm lại.",
             },
             {
               icon: ShieldCheck,
-              title: "Secure by default",
-              desc: "Row-Level Security keeps every teacher and student strictly scoped.",
+              title: "Bảo mật tuyệt đối",
+              desc: "Row-Level Security giữ dữ liệu của mỗi người dùng hoàn toàn độc lập.",
             },
             {
               icon: BarChart3,
-              title: "Live analytics",
-              desc: "Score distribution, attempt history, and per-exam performance.",
+              title: "Phân tích trực tiếp",
+              desc: "Phân bố điểm số, lịch sử làm bài và hiệu suất của từng đề thi.",
             },
             {
               icon: GraduationCap,
-              title: "Student-friendly",
-              desc: "Join with a 6-character code — no account required to take an exam.",
+              title: "Thân thiện với học sinh",
+              desc: "Tham gia với mã 6 ký tự — không bắt buộc đăng ký tài khoản.",
             },
             {
               icon: Sparkles,
-              title: "Fast & beautiful",
-              desc: "A premium dashboard built with React 19, Tailwind, and Shadcn UI.",
+              title: "Nhanh & đẹp mắt",
+              desc: "Bảng điều khiển cao cấp xây dựng bằng React 19, Tailwind và Shadcn UI.",
             },
           ].map((f) => (
             <div
@@ -123,10 +229,11 @@ function LandingPage() {
         </section>
       </main>
 
+      {/* ── Footer ── */}
       <footer className="border-t border-border/60">
         <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} QuizHub. All rights reserved.</p>
-          <p>Built with React 19 · TanStack · Tailwind</p>
+          <p>© {new Date().getFullYear()} QuizHub. Đã đăng ký bản quyền.</p>
+          <p>Xây dựng với React 19 · TanStack · Tailwind</p>
         </div>
       </footer>
     </div>

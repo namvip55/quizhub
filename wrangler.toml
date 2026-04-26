@@ -1,0 +1,14 @@
+name = "quizhub"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist/client"
+
+# Production environment variables should be set in the Cloudflare Dashboard:
+# Dashboard > Pages > quizhub > Settings > Environment variables
+# 1. VITE_SUPABASE_URL
+# 2. VITE_SUPABASE_PUBLISHABLE_KEY
+# 3. SUPABASE_URL
+# 4. SUPABASE_SERVICE_ROLE_KEY
+
+[vars]
+NODE_VERSION = "20"
