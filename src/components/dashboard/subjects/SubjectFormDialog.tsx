@@ -8,9 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { subjectService, Subject } from "@/services/subject.service";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 const subjectSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên môn học"),
@@ -27,7 +27,7 @@ export function SubjectFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subject?: any;
+  subject?: Subject;
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -51,18 +51,17 @@ export function SubjectFormDialog({
     mutationFn: async (values: SubjectFormValues) => {
       const payload = { ...values };
       if (!payload.subject_code) {
-        delete payload.subject_code; // Let database trigger generate it
+        delete payload.subject_code; 
       }
       
       if (subject) {
-        const { error } = await supabase.from("subjects").update(payload).eq("id", subject.id);
-        if (error) throw error;
+        return subjectService.updateSubject(subject.id, payload);
       } else {
-        const { error } = await supabase.from("subjects").insert({
+        return subjectService.createSubject({
           ...payload,
           teacher_id: user!.id,
+          name: payload.name, // explicitly pass required fields
         });
-        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -70,7 +69,7 @@ export function SubjectFormDialog({
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });

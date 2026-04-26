@@ -1,100 +1,57 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
-// @ts-ignore
-import tingTingSound from "@/public/ting_ting.mp3";
+import { examService } from "@/services/exam.service";
+import { useQuizEngine } from "@/hooks/useQuizEngine";
+
+const tingTingSound = "/ting_ting.mp3";
 
 export const Route = createFileRoute("/practice/$examCode")({
   head: () => ({ meta: [{ title: "Chế độ luyện tập — QuizHub" }] }),
+  loader: async ({ params: { examCode }, context: { queryClient } }) => {
+    return queryClient.ensureQueryData({
+      queryKey: ["practice-exam", examCode],
+      queryFn: async () => {
+        const exam = await examService.getExamByCode(examCode);
+        if (!exam) throw new Error("Exam not found");
+        const questions = await examService.getExamQuestions(exam.id);
+        return { exam, questions };
+      },
+    });
+  },
   component: PracticeModeView,
 });
 
 function PracticeModeView() {
   const { examCode } = Route.useParams();
   const navigate = Route.useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [stagedAnswer, setStagedAnswer] = useState<number | null>(null);
-  const [isFinished, setIsFinished] = useState(false);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    audioRef.current = new Audio(tingTingSound);
-  }, []);
 
   const { data: examData, isLoading } = useQuery({
     queryKey: ["practice-exam", examCode],
     queryFn: async () => {
-      // 1. Fetch exam
-      const { data: exam, error: examErr } = await supabase
-        .from("exams")
-        .select("*")
-        .eq("exam_code", examCode)
-        .single();
-
-      if (examErr || !exam) throw new Error("Exam not found");
-
-      // 2. Fetch questions via junction table
-      const { data: junction, error: jErr } = await supabase
-        .from("exam_questions")
-        .select(`
-          order_index,
-          question:questions (
-            id,
-            content,
-            options,
-            correct_answer,
-            explanation
-          )
-        `)
-        .eq("exam_id", exam.id)
-        .order("order_index", { ascending: true });
-
-      if (jErr) throw jErr;
-
-      // Extract and format questions
-      const questions = junction
-        .map((j) => j.question)
-        .filter((q): q is NonNullable<typeof q> => q !== null);
-
+      const exam = await examService.getExamByCode(examCode);
+      if (!exam) throw new Error("Exam not found");
+      const questions = await examService.getExamQuestions(exam.id);
       return { exam, questions };
     },
   });
 
-  const handleSelectAnswer = (optionIdx: number) => {
-    // If already confirmed, don't change
-    if (selectedAnswers[currentIndex] !== undefined) return;
-    setStagedAnswer(optionIdx);
-  };
-
-  const confirmAnswer = () => {
-    if (stagedAnswer === null || selectedAnswers[currentIndex] !== undefined) return;
-
-    const optionIdx = stagedAnswer;
-    setSelectedAnswers((prev) => ({ ...prev, [currentIndex]: optionIdx }));
-    
-    const isCorrect = optionIdx === currentQuestion.correct_answer;
-    if (isCorrect) {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(e => console.log("Audio play blocked", e));
-      }
-    }
-    setStagedAnswer(null);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((c) => c + 1);
-      setStagedAnswer(null);
-    } else {
-      setIsFinished(true);
-    }
-  };
+  const {
+    currentIndex,
+    currentQuestion,
+    selectedAnswers,
+    stagedAnswer,
+    isFinished,
+    hasAnsweredCurrent,
+    isCurrentCorrect,
+    handleSelectAnswer,
+    confirmAnswer,
+    handleNext,
+    handlePrev,
+    reset,
+  } = useQuizEngine(examData?.questions || [], tingTingSound);
 
   // Keyboard support
   useEffect(() => {
@@ -102,7 +59,7 @@ function PracticeModeView() {
       if (!examData || !examData.questions || examData.questions.length === 0 || isFinished) return;
 
       if (e.key === 'Enter') {
-        if (selectedAnswers[currentIndex] !== undefined) {
+        if (hasAnsweredCurrent) {
           handleNext();
         } else if (stagedAnswer !== null) {
           confirmAnswer();
@@ -110,36 +67,27 @@ function PracticeModeView() {
         return;
       }
 
-      if (selectedAnswers[currentIndex] !== undefined) {
+      if (hasAnsweredCurrent) {
         if (e.key === 'ArrowRight') handleNext();
-        if (e.key === 'ArrowLeft' && currentIndex > 0) {
-          setCurrentIndex(c => c - 1);
-          setStagedAnswer(null);
-        }
+        if (e.key === 'ArrowLeft') handlePrev();
         return;
       }
 
       if (e.key >= '1' && e.key <= '4') {
         handleSelectAnswer(parseInt(e.key) - 1);
-      } else if (['a', 'A'].includes(e.key)) {
-        handleSelectAnswer(0);
-      } else if (['b', 'B'].includes(e.key)) {
-        handleSelectAnswer(1);
-      } else if (['c', 'C'].includes(e.key)) {
-        handleSelectAnswer(2);
-      } else if (['d', 'D'].includes(e.key)) {
-        handleSelectAnswer(3);
-      } else if (e.key === 'ArrowRight' && currentIndex < examData.questions.length - 1) {
+      } else if (['a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key.toLowerCase())) {
+        const map: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 };
+        handleSelectAnswer(map[e.key.toLowerCase()]);
+      } else if (e.key === 'ArrowRight') {
         handleNext();
-      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        setCurrentIndex(c => c - 1);
-        setStagedAnswer(null);
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [examData, currentIndex, selectedAnswers, stagedAnswer, isFinished]);
+  }, [examData, hasAnsweredCurrent, stagedAnswer, isFinished, handleNext, handlePrev, confirmAnswer, handleSelectAnswer]);
 
   if (isLoading) {
     return (
@@ -175,12 +123,7 @@ function PracticeModeView() {
             <Button variant="outline" size="lg" onClick={() => navigate({ to: "/student" })} className="w-full">
               Quay lại danh sách
             </Button>
-            <Button size="lg" onClick={() => {
-              setCurrentIndex(0);
-              setSelectedAnswers({});
-              setStagedAnswer(null);
-              setIsFinished(false);
-            }} className="w-full">
+            <Button size="lg" onClick={reset} className="w-full">
               Luyện tập lại
             </Button>
           </div>
@@ -188,10 +131,6 @@ function PracticeModeView() {
       </div>
     );
   }
-
-  const currentQuestion = questions[currentIndex];
-  const hasAnsweredCurrent = selectedAnswers[currentIndex] !== undefined;
-  const isCurrentCorrect = selectedAnswers[currentIndex] === currentQuestion.correct_answer;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-muted/30 pb-12">
@@ -239,7 +178,7 @@ function PracticeModeView() {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-3xl px-4 pt-8">
+      <div className="container mx-auto max-w-3xl px-4 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden transition-all">
           <div className="p-6 sm:p-8">
             <h3 className="text-xl sm:text-2xl font-medium leading-relaxed whitespace-pre-wrap">
@@ -274,7 +213,7 @@ function PracticeModeView() {
                     else handleSelectAnswer(idx);
                   }}
                   disabled={hasAnsweredCurrent}
-                  className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all ${btnClass}`}
+                  className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] ${btnClass}`}
                 >
                   {icon}
                   <span className="text-base sm:text-lg">
@@ -287,7 +226,7 @@ function PracticeModeView() {
 
           {/* Feedback Section */}
           {hasAnsweredCurrent && (
-            <div className={`p-6 sm:p-8 border-t ${isCurrentCorrect ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}>
+            <div className={`p-6 sm:p-8 border-t animate-in slide-in-from-top-2 duration-300 ${isCurrentCorrect ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}>
               <h4 className={`text-lg font-semibold mb-2 ${isCurrentCorrect ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
                 {isCurrentCorrect ? "🎉 Chính xác!" : "Sai rồi!"}
               </h4>
@@ -306,7 +245,7 @@ function PracticeModeView() {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => setCurrentIndex((c) => c - 1)}
+            onClick={handlePrev}
             disabled={currentIndex === 0}
           >
             <ChevronLeft className="mr-2 h-5 w-5" /> Câu trước

@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { SubjectFormDialog } from "@/components/dashboard/subjects/SubjectFormDialog";
 import { SubjectExamsDialog } from "@/components/dashboard/subjects/SubjectExamsDialog";
+import { subjectService } from "@/services/subject.service";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/dashboard/subjects")({
   head: () => ({ meta: [{ title: "Môn học — QuizHub" }] }),
@@ -25,26 +26,17 @@ function SubjectsPage() {
 
   const { data: subjects, isLoading } = useQuery({
     queryKey: ["subjects"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => subjectService.getTeacherSubjects(user?.id || ""),
+    enabled: !!user?.id,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("subjects").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => subjectService.deleteSubject(id),
     onSuccess: () => {
       toast.success("Đã xóa môn học");
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error("Lỗi khi xóa môn học: " + error.message);
     },
   });
@@ -88,11 +80,26 @@ function SubjectsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border bg-card p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-6 w-3/4" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredSubjects?.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-12 text-center text-sm text-muted-foreground animate-in fade-in zoom-in duration-300">
           Chưa có môn học nào. Hãy tạo môn học đầu tiên để bắt đầu.
         </div>
       ) : (
