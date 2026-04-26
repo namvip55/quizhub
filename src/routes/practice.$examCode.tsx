@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 import { examService } from "@/services/exam.service";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
+import { ASSETS } from "@/constants/assets";
 
-const tingTingSound = "/ting_ting.mp3";
+const tingTingSound = ASSETS.SOUNDS.TING_TING;
 
 export const Route = createFileRoute("/practice/$examCode")({
   head: () => ({ meta: [{ title: "Chế độ luyện tập — QuizHub" }] }),

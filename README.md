@@ -1,79 +1,86 @@
-# 🎓 QuizHub Pro — Nền tảng Ôn luyện & Thi trực tuyến Thế hệ mới
+# 🎓 QuizHub Pro — The Future of Online Examination
+### 🚀 Elevating Education with Pure Vibe Coding Excellence
 
-![QuizHub Banner](https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=1200&h=400)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TanStack](https://img.shields.io/badge/TanStack-Router%20%26%20Query-FF4154?style=for-the-badge&logo=react-query)](https://tanstack.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Tailwind v4](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-Tested-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
-**QuizHub** là một nền tảng quản lý học tập và thi trắc nghiệm trực tuyến hiện đại, được thiết kế với trải nghiệm người dùng cao cấp, tốc độ vượt trội và quy trình làm việc thông minh cho cả Giáo viên và Học sinh.
-
----
-
-## ✨ Tính năng Nổi bật
-
-### 👨‍🎓 Đối với Học sinh
-- **Bảng điều khiển thông minh:** Tìm kiếm môn học linh hoạt (Fuzzy Search) theo tên, mô tả hoặc mã học phần.
-- **Top 100 Môn học:** Khám phá những môn học phổ biến nhất được cộng đồng quan tâm.
-- **Chế độ Luyện tập (Practice Mode):**
-    - Làm bài không giới hạn số lần.
-    - Hỗ trợ phím tắt **Enter** để kiểm tra đáp án và chuyển câu nhanh chóng.
-    - Hiển thị giải thích chi tiết ngay sau khi chọn.
-    - Âm thanh phản hồi trực quan.
-- **Phòng chờ Thi (Exam Lobby):** Kiểm tra thông tin, quy tắc và thời gian trước khi bắt đầu bài thi chính thức.
-
-### 👩‍🏫 Đối với Giáo viên
-- **Quản lý Toàn diện:** Tạo và quản lý Môn học, Ngân hàng câu hỏi và Đề thi một cách trực quan.
-- **Import DOCX Thông minh:** 
-    - Tự động parse câu hỏi từ file Word.
-    - **Tự động tạo Đề thi** ngay sau khi import thành công.
-- **Phân tích Kết quả:** Theo dõi bảng điểm, thống kê tỷ lệ đúng/sai và biểu đồ tăng trưởng của học sinh.
+**QuizHub Pro** không chỉ là một ứng dụng thi trực tuyến; đó là một tuyên ngôn về **Vibe Coding** — sự kết hợp hoàn hảo giữa tư duy kiến trúc hiện đại, tốc độ phát triển thần tốc và trải nghiệm người dùng cao cấp.
 
 ---
 
-## 🎨 Giao diện & Trải nghiệm (UI/UX)
-- **Premium Dark Mode:** Sử dụng hệ màu **OKLCH** hiện đại, mang lại chiều sâu và độ tương phản tuyệt vời.
-- **Micro-animations:** Các hiệu ứng chuyển cảnh mượt mà, phản hồi tức thì khi tương tác.
-- **Responsive Design:** Tối ưu hóa 100% cho các thiết bị di động, máy tính bảng và desktop.
-- **100% Tiếng Việt:** Toàn bộ giao diện được địa phương hóa chuẩn xác, thân thiện.
+## ⚡ The Vibe Coding Philosophy
+
+Dự án này được xây dựng trên triết lý **"High Fidelity, Low Friction"**:
+- **Surgical Precision:** Mọi thay đổi đều được thực hiện với độ chính xác tuyệt đối, không dư thừa.
+- **Vibe-Driven Logic:** Tập trung vào cảm giác của người dùng (vibe) thông qua micro-animations và hiệu suất tức thì.
+- **Architectural Integrity:** Tách biệt hoàn toàn giữa UI (Shadcn), Logic (Custom Hooks) và Data (Service Layer).
 
 ---
 
-## 🛠️ Công nghệ Sử dụng
+## ✨ Tính năng "Wow" Experience
 
-| Công nghệ | Vai trò |
-| :--- | :--- |
-| **Vite + React 19** | Core framework mạnh mẽ, hiệu năng cao |
-| **TanStack Router** | Quản lý routing an toàn và linh hoạt |
-| **Supabase** | Backend-as-a-Service (Database, Auth, Realtime) |
-| **Tailwind CSS v4** | Hệ thống styling hiện đại, tối ưu build |
-| **Lucide Icons** | Bộ icon vector sắc nét |
-| **TanStack Query** | Quản lý trạng thái server-side hiệu quả |
+### 🌊 Trải nghiệm Học sinh (The Fluid Flow)
+- **Smart Dashboard:** Tìm kiếm môn học siêu tốc với Fuzzy Search.
+- **Elite Practice Mode:** Hệ thống phím tắt (Hotkeys), âm thanh phản hồi haptic-like, và giải thích chi tiết tức thì.
+- **Lobby Experience:** Phòng chờ chuyên nghiệp, chuẩn bị tâm lý tốt nhất trước khi thi.
+
+### 🏛️ Trải nghiệm Giáo viên (The Power Suite)
+- **AI-Ready Import:** Tự động phân tích file Word (DOCX) và tạo đề thi chỉ trong 1 cú click.
+- **Deep Analytics:** Theo dõi hiệu suất học sinh qua các biểu đồ trực quan và bảng điểm realtime.
+- **Security First:** Bảo mật dữ liệu cấp độ hàng (RLS) của Supabase, đảm bảo sự riêng tư tuyệt đối.
 
 ---
 
-## 🚀 Hướng dẫn Triển khai (Deployment)
+## 🛠️ Stack Công nghệ "Hardcore"
 
-### 1. Biến môi trường (Environment Variables)
-Đảm bảo bạn đã thiết lập các biến sau trên môi trường build (ví dụ Cloudflare Pages):
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
-NODE_VERSION=20
-```
+| Layer | Technology | Why? |
+| :--- | :--- | :--- |
+| **Frontend** | React 19 + Vite | Đón đầu công nghệ mới nhất, hiệu năng vượt trội. |
+| **Routing** | TanStack Router | Type-safe routing, loại bỏ hoàn toàn lỗi điều hướng. |
+| **State** | TanStack Query | Caching thông minh, dữ liệu luôn "tươi". |
+| **Backend** | Supabase | Postgres mạnh mẽ kết hợp Realtime engine. |
+| **Styling** | Tailwind CSS v4 | Hệ màu OKLCH, thiết kế Dark Mode chuẩn Premium. |
+| **Quality** | Vitest + Zod | Đảm bảo hệ thống không bao giờ bị "break". |
 
-### 2. Cài đặt & Build
+---
+
+## 💎 Tiêu chuẩn 10/10 (Production Excellence)
+
+Dự án đã được refactor qua 5 giai đoạn khắt khe để đạt đến cảnh giới hoàn thiện nhất:
+1.  **Component Modularity:** Tách nhỏ UI thành các nguyên tử độc lập.
+2.  **Service Layer:** Đóng gói toàn bộ logic API, dễ dàng mở rộng.
+3.  **UX Optimization:** Skeleton loaders, pre-fetching data và animations mượt mà.
+4.  **Strict Typing:** Loại bỏ hoàn toàn `any`, đảm bảo an toàn kiểu dữ liệu 100%.
+5.  **Robust Testing:** Hệ thống unit test bảo vệ các logic cốt lõi.
+
+---
+
+## 🚀 Khởi chạy Thần tốc
+
 ```bash
-# Cài đặt thư viện
+# 1. Clone & Install
+git clone https://github.com/namvip55/quizhub.git
 npm install
 
-# Chạy môi trường phát triển
+# 2. Config Environment (.env)
+VITE_SUPABASE_URL=your_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_key
+
+# 3. Development
 npm run dev
 
-# Đóng gói sản phẩm
-npm run build
+# 4. Testing
+npm run test
 ```
 
 ---
 
-## 📄 Giấy phép
-Dự án được phát triển bởi **QuizHub Team**. Mọi quyền được bảo lưu.
+## 📄 License & Vision
+Phát triển bởi **QuizHub Team**. Tầm nhìn của chúng tôi là thay đổi cách giáo dục vận hành thông qua sức mạnh của AI và trải nghiệm phần mềm đỉnh cao.
 
 ---
-*Phát triển với ❤️ dành cho giáo dục Việt Nam.*
+*Built with ❤️ and pure **Vibe Coding** energy.*
