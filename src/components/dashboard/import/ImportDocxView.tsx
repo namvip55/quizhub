@@ -96,7 +96,7 @@ export function ImportDocxView() {
     let currentQ: Partial<ParsedQuestion> = { options: [] };
 
     const questionRegex = /^(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])\s*(.*)/i;
-    const optionRegex = /^(\*\s*)?([A-D1-4])\s*[\[\.\/\)]\s*(.*)/i;
+    const optionRegex = /^(\*\s*)?([A-D1-4])(?:\s*[\[\.\/\)]\s*|\s+)(.*)/i;
     const answerRegex = /^(Đáp\s*án|ĐA|Correct)[:\s]*([A-D1-4])/i;
     const explainRegex = /^(Giải\s*thích|Explanation)[:\s]*(.*)/i;
 
@@ -105,17 +105,17 @@ export function ImportDocxView() {
     // Regex to detect multiple inline options on one line
     // Matches patterns like: A. xxx  B. xxx  C. xxx  D. xxx  or  1. xxx  2. xxx  3. xxx  4. xxx
     // Also handles *A. xxx (asterisk marking correct answer)
-    const inlineOptionsRegex = /(\*?\s*[A-Da-d1-4]\s*[\[\.\/\)])/g;
+    const inlineOptionsRegex = /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))/g;
 
     const tryParseInlineOptions = (text: string, htmlContent: string, hasMark: boolean): boolean => {
       // Count how many option-like patterns exist in the text
       const matches = text.match(inlineOptionsRegex);
-      if (!matches || matches.length < 2 || !currentQ.content) return false;
+      if (!matches || matches.length < 2) return false;
 
       // Split the text by option markers to extract each option
-      // Use a regex that captures the delimiter so we can check for asterisk
-      const parts = text.split(/(\*?\s*[A-Da-d1-4]\s*[\[\.\/\)])/);
-      // parts: ["prefix", "A.", "content A", "B.", "content B", ...]
+      // Use the variable regex for splitting
+      const parts = text.split(inlineOptionsRegex);
+      // parts: ["prefix/question", "A.", "content A", "B.", "content B", ...]
 
       let extracted: { label: string; content: string; isAsterisk: boolean }[] = [];
       for (let i = 1; i < parts.length; i += 2) {
@@ -138,11 +138,22 @@ export function ImportDocxView() {
         if (lbl !== expectedLetter && lbl !== expectedNum) return false;
       }
 
+      // If we got here, it's a valid inline options line.
+      // If parts[0] has content, treat it as the question content.
+      if (parts[0].trim().length > 0) {
+        let qText = parts[0].trim();
+        const qPrefixMatch = qText.match(questionRegex);
+        if (qPrefixMatch) {
+          qText = qText.replace(questionRegex, "$2").trim();
+        }
+        currentQ.content = qText;
+        currentQ.options = []; // Reset options for this new question line
+      }
+
       // All valid — assign to currentQ
       extracted.forEach((opt, i) => {
         currentQ.options![i] = opt.content;
         if (opt.isAsterisk || hasMark) {
-          // For hasMark we'd need per-option check, but asterisk is reliable
           if (opt.isAsterisk) currentQ.correct_answer = i;
         }
       });
@@ -163,7 +174,33 @@ export function ImportDocxView() {
       
       const hasMark = el.querySelector("mark") !== null;
 
-      // --- Try inline multi-option first (e.g. "A. xx  B. xx  C. xx  D. xx" on one line) ---
+      // --- Bare asterisk: "* option text" without A/B/C/D prefix ---
+      // Treat as the next option and mark it correct
+      const bareAsteriskMatch = text.match(/^\*\s*(.+)$/);
+      const isBareAsterisk = bareAsteriskMatch && !oMatch; // don't double-count if oMatch already catches *A.
+
+      // --- Detect start of a new question (either with prefix or all-in-one line) ---
+      const isInlineWithQuestion = text.match(inlineOptionsRegex) && text.split(inlineOptionsRegex)[0].trim().length > 0;
+
+      if (qMatch || isInlineWithQuestion) {
+        if (currentQ.content) questions.push(finalizeQuestion(currentQ));
+        
+        if (qMatch) {
+          const contentPart = htmlContent.replace(questionRegex, "$2");
+          currentQ = { content: contentPart || text, options: [], correct_answer: -1, explanation: "" };
+          isExplaining = false;
+          // Try to see if there are inline options on this same line
+          tryParseInlineOptions(text, htmlContent, hasMark);
+          return;
+        } else {
+          // All-in-one line without "Câu X" prefix (e.g., "Question text. A. b B. c")
+          currentQ = { content: "", options: [], correct_answer: -1, explanation: "" };
+          tryParseInlineOptions(text, htmlContent, hasMark);
+          return;
+        }
+      }
+
+      // --- Try inline multi-option for lines that are ONLY options ---
       if (currentQ.content && currentQ.options!.length === 0 && tryParseInlineOptions(text, htmlContent, hasMark)) {
         // Successfully parsed inline options, skip other checks
         return;
@@ -189,11 +226,12 @@ export function ImportDocxView() {
         isExplaining = false;
         
         if (hasMark || isAsterisk) currentQ.correct_answer = optIdx;
-      } else if (qMatch) {
-        if (currentQ.content) questions.push(finalizeQuestion(currentQ));
-        // Extract content after the "Câu X:" part using innerHTML to keep images
-        const contentPart = htmlContent.replace(questionRegex, "$2");
-        currentQ = { content: contentPart || text, options: [], correct_answer: -1, explanation: "" };
+      } else if (isBareAsterisk && currentQ.content && currentQ.options!.length < 4) {
+        // Bare * line — treat as the next option and mark it correct
+        const optContent = htmlContent.replace(/^\*\s*/, "");
+        const nextIdx = currentQ.options!.length;
+        currentQ.options![nextIdx] = optContent;
+        currentQ.correct_answer = nextIdx;
         isExplaining = false;
       } else if (aMatch) {
         const ansLabel = aMatch[2].toUpperCase();
@@ -214,6 +252,9 @@ export function ImportDocxView() {
           if (hasMark) currentQ.correct_answer = currentQ.options.length - 1;
         } else if (currentQ.content) {
           currentQ.content += "<br/>" + htmlContent;
+        } else {
+          // Start first question if the line doesn't match any special pattern
+          currentQ.content = htmlContent;
         }
       }
     });
