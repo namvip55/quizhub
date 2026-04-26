@@ -82,6 +82,14 @@ function StudentDashboard() {
               <Home className="h-4 w-4 sm:mr-2" /> <span className="hidden xs:inline">Trang chủ</span>
             </Button>
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate({ to: "/about" })}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Info className="h-4 w-4 sm:mr-2" /> <span className="hidden xs:inline">Thông tin</span>
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={handleSignOut}

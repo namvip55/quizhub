@@ -99,6 +99,13 @@ function LandingPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigate({ to: "/about" })}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Thông tin
+                </button>
+                <button
+                  type="button"
                   onClick={handleSignOut}
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
@@ -107,13 +114,18 @@ function LandingPage() {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/login" })}
+                <Link
+                  to="/about"
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Thông tin
+                </Link>
+                <Link
+                  to="/login"
                   className={buttonVariants({ variant: "ghost", size: "sm" })}
                 >
                   Đăng nhập
-                </button>
+                </Link>
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/register" })}
