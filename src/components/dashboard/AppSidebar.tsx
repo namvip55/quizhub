@@ -23,7 +23,6 @@ import {
 const items = [
   { title: "Tổng quan", url: "/dashboard", icon: LayoutDashboard, exact: true },
   { title: "Môn học", url: "/dashboard/subjects", icon: BookOpen },
-  { title: "Câu hỏi", url: "/dashboard/questions", icon: ListChecks },
   { title: "Import DOCX", url: "/dashboard/import", icon: FileText },
   { title: "Đề thi", url: "/dashboard/exams", icon: FileText },
   { title: "Kết quả", url: "/dashboard/results", icon: BarChart3 },

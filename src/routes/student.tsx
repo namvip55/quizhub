@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, LogOut, Home, GraduationCap } from "lucide-react";
+import { Search, LogOut, Home, GraduationCap, Info } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

@@ -214,8 +214,8 @@ function PracticeModeView() {
             <span className="bg-primary/10 text-primary text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium shrink-0">Luyện tập</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-xs sm:text-sm text-muted-foreground font-medium shrink-0">
-              {currentIndex + 1} / {questions.length}
+            <div className="text-sm font-bold text-primary shrink-0 bg-primary/10 px-3 py-1.5 rounded-md">
+              Câu {currentIndex + 1} / {questions.length}
             </div>
             <Button
               variant="outline"
@@ -231,13 +231,19 @@ function PracticeModeView() {
             </Button>
           </div>
         </div>
+        <div className="h-1 bg-muted w-full">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+          />
+        </div>
       </div>
 
       <div className="container mx-auto max-w-3xl px-4 pt-8">
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden transition-all">
           <div className="p-6 sm:p-8">
             <h3 className="text-xl sm:text-2xl font-medium leading-relaxed whitespace-pre-wrap">
-              {currentQuestion.content}
+              <div dangerouslySetInnerHTML={{ __html: currentQuestion.content }} />
             </h3>
           </div>
 
@@ -271,7 +277,9 @@ function PracticeModeView() {
                   className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all ${btnClass}`}
                 >
                   {icon}
-                  <span className="text-base sm:text-lg">{option}</span>
+                  <span className="text-base sm:text-lg">
+                    <div dangerouslySetInnerHTML={{ __html: option }} className="inline-block" />
+                  </span>
                 </button>
               );
             })}
@@ -286,7 +294,7 @@ function PracticeModeView() {
               {currentQuestion.explanation && (
                 <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap p-4 bg-background/50 rounded-lg border">
                   <span className="font-semibold text-foreground block mb-1">Giải thích:</span>
-                  {currentQuestion.explanation}
+                  <div dangerouslySetInnerHTML={{ __html: currentQuestion.explanation }} />
                 </div>
               )}
             </div>

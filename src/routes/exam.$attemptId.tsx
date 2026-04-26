@@ -110,7 +110,7 @@ const QuestionItem = memo(function QuestionItem({
         </div>
         <div className="flex-1 space-y-6">
           <div className="prose prose-sm dark:prose-invert max-w-none font-medium text-base">
-            <ReactMarkdown>{q.content}</ReactMarkdown>
+            <div dangerouslySetInnerHTML={{ __html: q.content }} />
           </div>
           <div className="flex flex-col space-y-3">
             {options.map((opt, optIdx) => (
@@ -132,7 +132,7 @@ const QuestionItem = memo(function QuestionItem({
                   aria-label={`Option ${String.fromCharCode(65 + optIdx)}`}
                 />
                 <span className="text-sm sm:text-base leading-relaxed break-words flex-1">
-                  {opt}
+                  <div dangerouslySetInnerHTML={{ __html: opt }} />
                 </span>
               </label>
             ))}
@@ -319,10 +319,9 @@ function ExamPage() {
             <div className="font-semibold truncate">{attempt.exams.title}</div>
           </div>
           <div className="flex items-center gap-3 sm:gap-6">
-            <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
-              <span className="text-muted-foreground">Đã trả lời:</span>
-              <span className={answeredCount === totalQuestions ? "text-green-500" : ""}>
-                {answeredCount} / {totalQuestions}
+            <div className="hidden sm:flex items-center gap-2 text-sm font-medium bg-primary/10 px-3 py-1.5 rounded-md">
+              <span className="text-primary font-bold">
+                Câu {answeredCount} / {totalQuestions}
               </span>
             </div>
 

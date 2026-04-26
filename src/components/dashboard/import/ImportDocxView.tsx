@@ -68,7 +68,14 @@ export function ImportDocxView() {
       const options = {
         styleMap: [
           "highlight[color='yellow'] => mark.highlight-yellow",
-          "highlight[color='green'] => mark.highlight-green"
+          "highlight[color='green'] => mark.highlight-green",
+          // Word standard font colors
+          "r[color='FF0000'] => mark.color-red",
+          "r[color='C00000'] => mark.color-darkred",
+          "r[color='FFFF00'] => mark.color-yellow",
+          "r[color='00FF00'] => mark.color-green",
+          "r[color='00B050'] => mark.color-stdgreen",
+          "r[color='92D050'] => mark.color-lightgreen"
         ]
       };
       const result = await mammoth.convertToHtml({ arrayBuffer }, options);
@@ -88,17 +95,66 @@ export function ImportDocxView() {
 
     let currentQ: Partial<ParsedQuestion> = { options: [] };
 
-    const questionRegex = /^(Câu\s+\d+|Question\s+\d+|\d+[\[\.\)])\s*(.*)/i;
-    const optionRegex = /^([A-D])[\[\.\/\)]\s*(.*)/i;
-    const answerRegex = /^(Đáp\s*án|ĐA|Correct)[:\s]*([A-D])/i;
+    const questionRegex = /^(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])\s*(.*)/i;
+    const optionRegex = /^(\*\s*)?([A-D1-4])\s*[\[\.\/\)]\s*(.*)/i;
+    const answerRegex = /^(Đáp\s*án|ĐA|Correct)[:\s]*([A-D1-4])/i;
     const explainRegex = /^(Giải\s*thích|Explanation)[:\s]*(.*)/i;
 
     let isExplaining = false;
 
+    // Regex to detect multiple inline options on one line
+    // Matches patterns like: A. xxx  B. xxx  C. xxx  D. xxx  or  1. xxx  2. xxx  3. xxx  4. xxx
+    // Also handles *A. xxx (asterisk marking correct answer)
+    const inlineOptionsRegex = /(\*?\s*[A-Da-d1-4]\s*[\[\.\/\)])/g;
+
+    const tryParseInlineOptions = (text: string, htmlContent: string, hasMark: boolean): boolean => {
+      // Count how many option-like patterns exist in the text
+      const matches = text.match(inlineOptionsRegex);
+      if (!matches || matches.length < 2 || !currentQ.content) return false;
+
+      // Split the text by option markers to extract each option
+      // Use a regex that captures the delimiter so we can check for asterisk
+      const parts = text.split(/(\*?\s*[A-Da-d1-4]\s*[\[\.\/\)])/);
+      // parts: ["prefix", "A.", "content A", "B.", "content B", ...]
+
+      let extracted: { label: string; content: string; isAsterisk: boolean }[] = [];
+      for (let i = 1; i < parts.length; i += 2) {
+        const marker = parts[i] || "";
+        const content = (parts[i + 1] || "").trim();
+        const isAst = marker.trim().startsWith("*");
+        const labelMatch = marker.match(/([A-Da-d1-4])/);
+        if (labelMatch) {
+          extracted.push({ label: labelMatch[1].toUpperCase(), content, isAsterisk: isAst });
+        }
+      }
+
+      if (extracted.length < 2) return false;
+
+      // Validate sequential labels
+      for (let i = 0; i < extracted.length; i++) {
+        const lbl = extracted[i].label;
+        const expectedLetter = String.fromCharCode(65 + i); // A, B, C, D
+        const expectedNum = String(i + 1); // 1, 2, 3, 4
+        if (lbl !== expectedLetter && lbl !== expectedNum) return false;
+      }
+
+      // All valid — assign to currentQ
+      extracted.forEach((opt, i) => {
+        currentQ.options![i] = opt.content;
+        if (opt.isAsterisk || hasMark) {
+          // For hasMark we'd need per-option check, but asterisk is reliable
+          if (opt.isAsterisk) currentQ.correct_answer = i;
+        }
+      });
+      isExplaining = false;
+      return true;
+    };
+
     // mammoth converts paragraphs to <p> tags
     Array.from(doc.body.children).forEach((el) => {
       const text = el.textContent?.trim() || "";
-      if (!text) return;
+      const htmlContent = el.innerHTML || "";
+      if (!text && !el.querySelector("img")) return;
 
       const qMatch = text.match(questionRegex);
       const oMatch = text.match(optionRegex);
@@ -107,35 +163,57 @@ export function ImportDocxView() {
       
       const hasMark = el.querySelector("mark") !== null;
 
-      if (qMatch) {
-        if (currentQ.content) questions.push(finalizeQuestion(currentQ));
-        currentQ = { content: qMatch[2] || text, options: [], correct_answer: -1, explanation: "" };
-        isExplaining = false;
-      } else if (aMatch) {
-        currentQ.correct_answer = aMatch[2].toUpperCase().charCodeAt(0) - 65;
-        isExplaining = false;
-      } else if (eMatch) {
-        currentQ.explanation = eMatch[2] || "";
-        isExplaining = true;
-      } else if (oMatch && currentQ.options!.length < 4) {
-        const optLetter = oMatch[1].toUpperCase();
-        const idx = optLetter.charCodeAt(0) - 65;
-        currentQ.options![idx] = oMatch[2];
+      // --- Try inline multi-option first (e.g. "A. xx  B. xx  C. xx  D. xx" on one line) ---
+      if (currentQ.content && currentQ.options!.length === 0 && tryParseInlineOptions(text, htmlContent, hasMark)) {
+        // Successfully parsed inline options, skip other checks
+        return;
+      }
+
+      let matchedAsOption = false;
+      let optIdx = -1;
+      let isAsterisk = false;
+
+      if (oMatch && currentQ.content && currentQ.options!.length < 4) {
+        const optLabel = oMatch[2].toUpperCase();
+        optIdx = /[1-4]/.test(optLabel) ? parseInt(optLabel) - 1 : optLabel.charCodeAt(0) - 65;
+        // Prioritize option if it strictly follows the sequence or it's the expected next option
+        if (optIdx === currentQ.options!.length) {
+          matchedAsOption = true;
+          isAsterisk = !!oMatch[1];
+        }
+      }
+
+      if (matchedAsOption) {
+        // Keep HTML in options to support images
+        currentQ.options![optIdx] = htmlContent.replace(optionRegex, "$3");
         isExplaining = false;
         
-        if (hasMark) currentQ.correct_answer = idx;
+        if (hasMark || isAsterisk) currentQ.correct_answer = optIdx;
+      } else if (qMatch) {
+        if (currentQ.content) questions.push(finalizeQuestion(currentQ));
+        // Extract content after the "Câu X:" part using innerHTML to keep images
+        const contentPart = htmlContent.replace(questionRegex, "$2");
+        currentQ = { content: contentPart || text, options: [], correct_answer: -1, explanation: "" };
+        isExplaining = false;
+      } else if (aMatch) {
+        const ansLabel = aMatch[2].toUpperCase();
+        currentQ.correct_answer = /[1-4]/.test(ansLabel) ? parseInt(ansLabel) - 1 : ansLabel.charCodeAt(0) - 65;
+        isExplaining = false;
+      } else if (eMatch) {
+        currentQ.explanation = htmlContent.replace(explainRegex, "$2") || "";
+        isExplaining = true;
       } else {
         if (isExplaining) {
-          currentQ.explanation += "\n" + text;
+          currentQ.explanation += "<br/>" + htmlContent;
         } else if (
           currentQ.options &&
           currentQ.options.length > 0 &&
           currentQ.options.length <= 4
         ) {
-          currentQ.options[currentQ.options.length - 1] += "\n" + text;
+          currentQ.options[currentQ.options.length - 1] += "<br/>" + htmlContent;
           if (hasMark) currentQ.correct_answer = currentQ.options.length - 1;
         } else if (currentQ.content) {
-          currentQ.content += "\n" + text;
+          currentQ.content += "<br/>" + htmlContent;
         }
       }
     });
@@ -190,6 +268,8 @@ export function ImportDocxView() {
         title: "Đề từ file " + fileName,
         duration: 60,
         published: false,
+        allow_retry: true,
+        max_attempts: 36,
         subject_id: subjectId,
         exam_code: generateCode(),
         created_by: user!.id,

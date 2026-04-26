@@ -112,12 +112,9 @@ function ExamsPage() {
           <p className="mt-1 text-sm text-muted-foreground">Tạo và quản lý các đề thi của bạn.</p>
         </div>
         <Button
-          onClick={() => {
-            setEditingExam(null);
-            setIsDialogOpen(true);
-          }}
+          onClick={() => navigate({ to: "/dashboard/import" })}
         >
-          <Plus className="mr-2 h-4 w-4" /> Tạo đề thi
+          <Plus className="mr-2 h-4 w-4" /> Import DOCX tạo đề
         </Button>
       </div>
 

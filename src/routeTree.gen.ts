@@ -23,7 +23,6 @@ import { Route as ExamCodeRouteImport } from './routes/exam.$code'
 import { Route as ExamAttemptIdRouteImport } from './routes/exam.$attemptId'
 import { Route as DashboardSubjectsRouteImport } from './routes/dashboard.subjects'
 import { Route as DashboardResultsRouteImport } from './routes/dashboard.results'
-import { Route as DashboardQuestionsRouteImport } from './routes/dashboard.questions'
 import { Route as DashboardImportRouteImport } from './routes/dashboard.import'
 import { Route as DashboardExamsRouteImport } from './routes/dashboard.exams'
 
@@ -97,11 +96,6 @@ const DashboardResultsRoute = DashboardResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardQuestionsRoute = DashboardQuestionsRouteImport.update({
-  id: '/questions',
-  path: '/questions',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardImportRoute = DashboardImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -122,7 +116,6 @@ export interface FileRoutesByFullPath {
   '/student': typeof StudentRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
-  '/dashboard/questions': typeof DashboardQuestionsRoute
   '/dashboard/results': typeof DashboardResultsRoute
   '/dashboard/subjects': typeof DashboardSubjectsRoute
   '/exam/$attemptId': typeof ExamAttemptIdRoute
@@ -140,7 +133,6 @@ export interface FileRoutesByTo {
   '/student': typeof StudentRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
-  '/dashboard/questions': typeof DashboardQuestionsRoute
   '/dashboard/results': typeof DashboardResultsRoute
   '/dashboard/subjects': typeof DashboardSubjectsRoute
   '/exam/$attemptId': typeof ExamAttemptIdRoute
@@ -160,7 +152,6 @@ export interface FileRoutesById {
   '/student': typeof StudentRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
-  '/dashboard/questions': typeof DashboardQuestionsRoute
   '/dashboard/results': typeof DashboardResultsRoute
   '/dashboard/subjects': typeof DashboardSubjectsRoute
   '/exam/$attemptId': typeof ExamAttemptIdRoute
@@ -181,7 +172,6 @@ export interface FileRouteTypes {
     | '/student'
     | '/dashboard/exams'
     | '/dashboard/import'
-    | '/dashboard/questions'
     | '/dashboard/results'
     | '/dashboard/subjects'
     | '/exam/$attemptId'
@@ -199,7 +189,6 @@ export interface FileRouteTypes {
     | '/student'
     | '/dashboard/exams'
     | '/dashboard/import'
-    | '/dashboard/questions'
     | '/dashboard/results'
     | '/dashboard/subjects'
     | '/exam/$attemptId'
@@ -218,7 +207,6 @@ export interface FileRouteTypes {
     | '/student'
     | '/dashboard/exams'
     | '/dashboard/import'
-    | '/dashboard/questions'
     | '/dashboard/results'
     | '/dashboard/subjects'
     | '/exam/$attemptId'
@@ -343,13 +331,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardResultsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/questions': {
-      id: '/dashboard/questions'
-      path: '/questions'
-      fullPath: '/dashboard/questions'
-      preLoaderRoute: typeof DashboardQuestionsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/import': {
       id: '/dashboard/import'
       path: '/import'
@@ -370,7 +351,6 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardExamsRoute: typeof DashboardExamsRoute
   DashboardImportRoute: typeof DashboardImportRoute
-  DashboardQuestionsRoute: typeof DashboardQuestionsRoute
   DashboardResultsRoute: typeof DashboardResultsRoute
   DashboardSubjectsRoute: typeof DashboardSubjectsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -379,7 +359,6 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardExamsRoute: DashboardExamsRoute,
   DashboardImportRoute: DashboardImportRoute,
-  DashboardQuestionsRoute: DashboardQuestionsRoute,
   DashboardResultsRoute: DashboardResultsRoute,
   DashboardSubjectsRoute: DashboardSubjectsRoute,
   DashboardIndexRoute: DashboardIndexRoute,

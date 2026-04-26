@@ -35,7 +35,6 @@ function DashboardOverview() {
 
   const stats = [
     { label: "Môn học", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.subjects, icon: BookOpen, href: "/dashboard/subjects" as const },
-    { label: "Câu hỏi", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.questions, icon: ListChecks, href: "/dashboard/questions" as const },
     { label: "Đề thi", labelPlural: "Đề thi", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.exams, icon: FileText, href: "/dashboard/exams" as const },
     { label: "Lượt làm bài", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.attempts, icon: BarChart3, href: "/dashboard/results" as const },
   ];
@@ -68,7 +67,7 @@ function DashboardOverview() {
       <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-8 text-center">
         <h2 className="text-base font-medium">Bắt đầu ngay</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tạo Môn học, thêm Câu hỏi, sau đó xây dựng Đề thi để chia sẻ với học sinh của bạn.
+          Tạo Môn học, sử dụng Import DOCX để tạo Đề thi và chia sẻ với học sinh của bạn.
         </p>
       </div>
     </div>
