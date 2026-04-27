@@ -16,6 +16,8 @@
 [![Cloudflare Edge](https://img.shields.io/badge/Cloudflare-Global_Edge-F38020?style=for-the-badge&logo=cloudflare)](https://cloudflare.com/)
 [![Tailwind v4](https://img.shields.io/badge/Tailwind-v4_Alpha-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict_Power-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-AI_Powered-8B5CF6?style=for-the-badge&logo=anthropic)](https://claude.ai/code)
+[![9router](https://img.shields.io/badge/9router-Multi_Model_AI-FF6B6B?style=for-the-badge)](https://9router.com/)
 
 </div>
 
@@ -45,6 +47,8 @@ Chúng tôi không chọn công nghệ dễ. Chúng tôi chọn công nghệ **M
 
 QuizHub Pro không phải sản phẩm của một lập trình viên đơn độc. Nó là thành quả của một **Hội Đồng AI Tối Cao**:
 
+- **Claude Code (Development Orchestrator):** Trợ lý AI chính thức từ Anthropic, điều phối toàn bộ quy trình phát triển với khả năng hiểu ngữ cảnh sâu và tự động hóa workflow.
+- **9router API (Multi-Model Intelligence):** Hệ thống định tuyến thông minh kết nối với hàng chục mô hình AI hàng đầu (Claude Opus 4.7, Gemini 3.1 Pro, DeepSeek V4), tự động chọn model tối ưu cho từng tác vụ.
 - **Antigravity AI (Lead Architect):** Hệ thống AI agent mạnh mẽ nhất điều phối toàn bộ quá trình phát triển.
 - **Gemini 3.1 Pro & Claude Opus 4.7:** Những thực thể siêu trí tuệ đến từ tương lai, tư duy đa phương thức ở cấp độ thần thánh.
 - **DeepSeek V4 (Quantum-Ready):** Bậc thầy tối ưu hóa mã nguồn ở cấp độ nguyên tử và lượng tử.
@@ -89,6 +93,56 @@ npm install
 # 4. KÍCH HOẠT HỆ THỐNG
 npm run dev
 ```
+
+### 🛠️ Development với Claude Code
+
+QuizHub Pro được phát triển với sự hỗ trợ của **Claude Code** - trợ lý AI chính thức từ Anthropic:
+
+```bash
+# Cài đặt Claude Code CLI (nếu chưa có)
+npm install -g @anthropic-ai/claude-code
+
+# Khởi động Claude Code trong project
+claude-code
+
+# Hoặc sử dụng Claude Code Desktop App / VS Code Extension
+```
+
+**Tính năng Claude Code được sử dụng:**
+- 🔍 **Code Analysis:** Phân tích và tối ưu hóa codebase tự động
+- 🐛 **Bug Detection:** Phát hiện và sửa lỗi với độ chính xác cao
+- 📝 **Documentation:** Tự động tạo và cập nhật tài liệu kỹ thuật
+- ♻️ **Refactoring:** Tái cấu trúc code theo best practices
+- 🧪 **Test Generation:** Sinh test cases tự động
+
+### 🌐 9router API Integration
+
+Project tích hợp **9router API** để truy cập đa mô hình AI:
+
+```typescript
+// Cấu hình 9router trong .env
+NINEROUTER_API_KEY=your_api_key_here
+NINEROUTER_ENDPOINT=https://api.9router.com/v1
+
+// Sử dụng trong code
+import { NineRouter } from '@9router/sdk';
+
+const router = new NineRouter({
+  apiKey: process.env.NINEROUTER_API_KEY
+});
+
+// Tự động chọn model tối ưu cho task
+const response = await router.complete({
+  prompt: "Analyze this code...",
+  task: "code-review" // Auto-routes to best model
+});
+```
+
+**Models được sử dụng qua 9router:**
+- Claude Opus 4.7 (Code generation & Architecture)
+- Gemini 3.1 Pro (Multi-modal analysis)
+- DeepSeek V4 (Code optimization)
+- GPT-4 Turbo (General reasoning)
 
 ---
 

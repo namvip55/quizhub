@@ -30,6 +30,22 @@ const examSchema = z.object({
 
 type FormValues = z.infer<typeof examSchema>;
 
+type Exam = {
+  id: string;
+  title: string;
+  subject_id: string;
+  duration: number;
+  allow_retry: boolean;
+  max_attempts: number;
+  show_answer: boolean;
+  published: boolean;
+};
+
+type Subject = {
+  id: string;
+  name: string;
+};
+
 export function ExamFormDialog({
   open,
   onOpenChange,
@@ -38,8 +54,8 @@ export function ExamFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exam?: any;
-  subjects: any[];
+  exam?: Exam;
+  subjects: Subject[];
 }) {
   const queryClient = useQueryClient();
 

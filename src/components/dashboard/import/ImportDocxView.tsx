@@ -52,7 +52,7 @@ const extractCorrectAnswersByQuestion = async (arrayBuffer: ArrayBuffer): Promis
   const doc = parser.parseFromString(documentXml, "application/xml");
   const paragraphs = Array.from(doc.getElementsByTagNameNS("*", "p"));
   const correctAnswers: number[] = [];
-  const questionRegex = /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])(?:\s*\[<DE>\])?[:\s]*/i;
+  const questionRegex = /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[[.)])(?:\s*\[<DE>\])?[:\s]*/i;
 
   const getRunText = (run: Element) =>
     Array.from(run.getElementsByTagNameNS("*", "t"))
@@ -92,7 +92,7 @@ const extractCorrectAnswersByQuestion = async (arrayBuffer: ArrayBuffer): Promis
     const hasStyledMarker = runs.some((run) => {
       if (!hasRunColorOrHighlight(run)) return false;
       const runText = getRunText(run).replace(/\s+/g, "");
-      return /[\[\]<>$]/.test(runText);
+      return /[[<>$]/.test(runText);
     });
 
     if (hasStyledMarker) {
@@ -175,8 +175,9 @@ export function ImportDocxView() {
     let currentQ: Partial<ParsedQuestion> = { options: [] };
     let currentQuestionIndex = -1;
 
-    const questionRegex = /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])(?:\s*\[<DE>\])?[:\s]*(.*)/i;
-    const optionRegex = /^\s*(\*\s*)?(?:([A-D1-4])(?:\s*[\[\.\/\)]\s*|\s+)|\[<\$>\]\s*)(.*)/i;
+    const questionRegex =
+      /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[.[.\]])(?:\s*\[<DE>\])?[:\s]*(.*)/i;
+    const optionRegex = /^\s*(\*\s*)?(?:([A-D1-4])(?:\s*[[./)]\s*|\s+)|\[<\$>\]\s*)(.*)/i;
     const answerRegex = /^\s*(Đáp\s*án|ĐA|Correct)[:\s]*([A-D1-4])/i;
     const explainRegex = /^\s*(Giải\s*thích|Explanation)[:\s]*(.*)/i;
 
@@ -186,7 +187,7 @@ export function ImportDocxView() {
     // Matches patterns like: A. xxx  B. xxx  C. xxx  D. xxx  or  1. xxx  2. xxx  3. xxx  4. xxx
     // Also handles *A. xxx (asterisk marking correct answer)
     const inlineOptionsRegex =
-      /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))|(\[<\$>\])/g;
+      /((?:\*\s*[A-Da-d1-4](?:\s*[[./)]\s*|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[[./)]))|(\[<\$>\])/g;
 
     const stripHintTags = (html: string) => {
       // Remove <mark> tags but keep their content
@@ -197,9 +198,9 @@ export function ImportDocxView() {
       cleaned = cleaned.replace(/\[&lt;\$&gt;\]\s*/gi, "");
       cleaned = cleaned.replace(/\[&lt;DE&gt;\]\s*/gi, "");
       // Remove "Câu X:", "Question X:", etc. prefixes
-      cleaned = cleaned.replace(/^\s*(?:Câu|Question|Bài|Bài tập)\s+\d+\s*[:\.]?\s*/i, "");
+      cleaned = cleaned.replace(/^\s*(?:Câu|Question|Bài|Bài tập)\s+\d+\s*[:.]?\s*/i, "");
       // Remove "A.", "B.", etc. prefixes for options
-      cleaned = cleaned.replace(/^\s*[A-D1-4]\s*[\[\.\/\)]\s*/i, "");
+      cleaned = cleaned.replace(/^\s*[A-D1-4]\s*[[./)]\s*/i, "");
       return cleaned.trim();
     };
 
@@ -226,7 +227,7 @@ export function ImportDocxView() {
       if (!matches || matches.length < 2) return false;
 
       const parts = text.split(inlineOptionsRegex);
-      let extracted: { label: string; content: string; isAsterisk: boolean }[] = [];
+      const extracted: { label: string; content: string; isAsterisk: boolean }[] = [];
       for (let i = 1; i < parts.length; i += 2) {
         const marker = parts[i] || "";
         const content = (parts[i + 1] || "").trim();
@@ -335,7 +336,11 @@ export function ImportDocxView() {
       let optIdx = -1;
       let isAsterisk = false;
 
-      if ((oMatch || text.startsWith("[<$>]")) && currentQ.content && currentQ.options!.length < 4) {
+      if (
+        (oMatch || text.startsWith("[<$>]")) &&
+        currentQ.content &&
+        currentQ.options!.length < 4
+      ) {
         const optLabel = oMatch ? oMatch[2]?.toUpperCase() : null;
         if (optLabel) {
           optIdx = /[1-4]/.test(optLabel) ? parseInt(optLabel) - 1 : optLabel.charCodeAt(0) - 65;
@@ -357,7 +362,8 @@ export function ImportDocxView() {
         currentQ.options![optIdx] = stripHintTags(htmlContent);
         isExplaining = false;
 
-        if (hasCorrectHint || isAsterisk || xmlCorrectAnswer === optIdx) currentQ.correct_answer = optIdx;
+        if (hasCorrectHint || isAsterisk || xmlCorrectAnswer === optIdx)
+          currentQ.correct_answer = optIdx;
       } else if (isBareAsterisk && currentQ.content && currentQ.options!.length < 4) {
         // Bare * line — clean it up
         const optContent = stripHintTags(htmlContent.replace(/^\*\s*/, ""));
@@ -422,7 +428,11 @@ export function ImportDocxView() {
     };
   };
 
-  const updateQuestion = (index: number, field: keyof ParsedQuestion, value: any) => {
+  const updateQuestion = (
+    index: number,
+    field: keyof ParsedQuestion,
+    value: string | string[] | number,
+  ) => {
     setParsedData((prev) => {
       const newData = [...prev];
       newData[index] = finalizeQuestion({ ...newData[index], [field]: value, error: undefined });

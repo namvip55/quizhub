@@ -4,18 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, XCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
+type Attempt = {
+  id: string;
+  exam_id: string;
+  student_name: string;
+  score: number;
+  answers: Record<string, number>;
+};
+
+type QuestionDetail = {
+  id: string;
+  content: string;
+  options: string[];
+  correct_answer: number;
+  studentAns: number;
+  isCorrect: boolean;
+  order_index: number;
+};
+
 export function AttemptDetailDialog({
   attempt,
   open,
   onOpenChange,
 }: {
-  attempt: any;
+  attempt: Attempt | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { data: details, isLoading } = useQuery({
+  const { data: details, isLoading } = useQuery<QuestionDetail[]>({
     queryKey: ["attempt-details", attempt?.id],
     queryFn: async () => {
+      if (!attempt) return [];
+
       // Fetch the questions for this exam to compare answers
       const { data: eqData, error: eqError } = await supabase
         .from("exam_questions")
@@ -27,8 +47,13 @@ export function AttemptDetailDialog({
 
       const studentAnswers = attempt.answers as Record<string, number>;
 
-      return eqData.map((eq: any) => {
-        const q = eq.questions;
+      return eqData.map((eq) => {
+        const q = eq.questions as {
+          id: string;
+          content: string;
+          options: string[];
+          correct_answer: number;
+        };
         const studentAns = studentAnswers[q.id];
         const isCorrect = studentAns === q.correct_answer;
         return {
@@ -63,13 +88,13 @@ export function AttemptDetailDialog({
               <div>
                 <p className="text-sm text-muted-foreground">Số câu đúng</p>
                 <p className="text-xl font-medium">
-                  {details?.filter((d: any) => d.isCorrect).length} / {details?.length}
+                  {details?.filter((d) => d.isCorrect).length} / {details?.length}
                 </p>
               </div>
             </div>
 
             <div className="space-y-8">
-              {details?.map((q: any, i: number) => (
+              {details?.map((q, i: number) => (
                 <div key={q.id} className="border rounded-lg p-4 bg-card shadow-sm space-y-4">
                   <div className="flex gap-3">
                     <div className="mt-1">
