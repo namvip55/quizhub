@@ -1,3 +1,6 @@
+-- Ensure anon_secret exists
+alter table public.exam_attempts add column if not exists anon_secret text;
+
 -- Update check_max_attempts trigger to use anon_secret instead of student_name
 create or replace function public.check_max_attempts()
 returns trigger
@@ -224,3 +227,18 @@ $$;
 -- Drop insecure direct DML policies since all modifications go through secure RPCs
 drop policy if exists "Attempts: anyone can start for published exam" on public.exam_attempts;
 drop policy if exists "Attempts: student updates own in-flight" on public.exam_attempts;
+
+-- Secure RPC for fetching an attempt securely
+create or replace function public.get_exam_attempt(attempt_id uuid, secret text default null)
+returns setof public.exam_attempts
+language sql
+security definer
+as $$
+  select * from public.exam_attempts
+  where id = attempt_id
+  and (
+    (student_id = auth.uid()) or
+    (student_id is null and anon_secret = secret) or
+    (exists (select 1 from public.exams e where e.id = exam_attempts.exam_id and e.created_by = auth.uid()))
+  );
+$$;
