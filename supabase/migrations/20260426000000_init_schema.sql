@@ -312,6 +312,10 @@ on public.subjects for all to authenticated
 using (teacher_id = auth.uid())
 with check (teacher_id = auth.uid() and public.has_role(auth.uid(), 'teacher'));
 
+create policy "Subjects: public read"
+on public.subjects for select to anon, authenticated
+using (true);
+
 -- ---------- questions ----------
 create policy "Questions: teacher owns rows"
 on public.questions for all to authenticated
