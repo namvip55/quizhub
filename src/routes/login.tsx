@@ -43,7 +43,8 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user && profile) {
-      const dest = search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
+      const dest =
+        search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
       navigate({ to: dest });
     }
   }, [user, profile, loading, navigate, search.redirect]);

@@ -15,12 +15,21 @@ function DashboardOverview() {
     queryKey: ["dashboard-stats", user?.id],
     queryFn: async () => {
       if (!user) return { subjects: 0, questions: 0, exams: 0, attempts: 0 };
-      
+
       const [sub, q, ex, att] = await Promise.all([
-        supabase.from("subjects").select("*", { count: "exact", head: true }).eq("teacher_id", user.id),
-        supabase.from("questions").select("*", { count: "exact", head: true }).eq("created_by", user.id),
-        supabase.from("exams").select("*", { count: "exact", head: true }).eq("created_by", user.id),
-        supabase.from("exam_attempts").select("id", { count: "exact" }) // Needs proper join for teacher if we strictly count their attempts. RLS policy "attempts_teacher_select" already limits to their exams.
+        supabase
+          .from("subjects")
+          .select("*", { count: "exact", head: true })
+          .eq("teacher_id", user.id),
+        supabase
+          .from("questions")
+          .select("*", { count: "exact", head: true })
+          .eq("created_by", user.id),
+        supabase
+          .from("exams")
+          .select("*", { count: "exact", head: true })
+          .eq("created_by", user.id),
+        supabase.from("exam_attempts").select("id", { count: "exact" }), // Needs proper join for teacher if we strictly count their attempts. RLS policy "attempts_teacher_select" already limits to their exams.
       ]);
 
       return {
@@ -34,9 +43,37 @@ function DashboardOverview() {
   });
 
   const stats = [
-    { label: "Môn học", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.subjects, icon: BookOpen, href: "/dashboard/subjects" as const },
-    { label: "Đề thi", labelPlural: "Đề thi", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.exams, icon: FileText, href: "/dashboard/exams" as const },
-    { label: "Lượt làm bài", value: isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : counts?.attempts, icon: BarChart3, href: "/dashboard/results" as const },
+    {
+      label: "Môn học",
+      value: isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      ) : (
+        counts?.subjects
+      ),
+      icon: BookOpen,
+      href: "/dashboard/subjects" as const,
+    },
+    {
+      label: "Đề thi",
+      labelPlural: "Đề thi",
+      value: isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      ) : (
+        counts?.exams
+      ),
+      icon: FileText,
+      href: "/dashboard/exams" as const,
+    },
+    {
+      label: "Lượt làm bài",
+      value: isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      ) : (
+        counts?.attempts
+      ),
+      icon: BarChart3,
+      href: "/dashboard/results" as const,
+    },
   ];
 
   return (

@@ -22,25 +22,22 @@ function ResultPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: attempt, isLoading, error } = useQuery({
+  const {
+    data: attempt,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["attempt-result", attemptId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("exam_attempts")
+        .rpc("get_exam_attempt", {
+          attempt_id: attemptId,
+          secret: localStorage.getItem(`anon_secret_${attemptId}`) || null,
+        })
         .select("*, exams(title)")
-        .eq("id", attemptId)
         .single();
-        
+
       if (error) throw error;
-      
-      // Secure Anonymous Verification
-      if (!user) {
-        const localSecret = localStorage.getItem(`anon_secret_${attemptId}`);
-        const dbSecret = (data.answers as any)?._secret;
-        if (!dbSecret || localSecret !== dbSecret) {
-          throw new Error("Unauthorized to view this result. Invalid or missing secret token.");
-        }
-      }
 
       return data;
     },
@@ -90,7 +87,8 @@ function ResultPage() {
 
   const startedAt = attempt.started_at ? new Date(attempt.started_at).getTime() : 0;
   const submittedAt = attempt.submitted_at ? new Date(attempt.submitted_at).getTime() : 0;
-  const timeSpentSeconds = startedAt && submittedAt ? Math.floor((submittedAt - startedAt) / 1000) : 0;
+  const timeSpentSeconds =
+    startedAt && submittedAt ? Math.floor((submittedAt - startedAt) / 1000) : 0;
   const timeSpentMins = Math.floor(timeSpentSeconds / 60);
   const timeSpentSecs = timeSpentSeconds % 60;
 
@@ -101,18 +99,22 @@ function ResultPage() {
       <div className="container mx-auto max-w-4xl space-y-8">
         <Button variant="ghost" asChild className="mb-4">
           <Link to={user ? "/dashboard" : "/"}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> 
+            <ArrowLeft className="mr-2 h-4 w-4" />
             {user ? "Quay lại bảng điều khiển" : "Quay lại trang chủ"}
           </Link>
         </Button>
 
         <div className="rounded-xl border bg-card p-6 sm:p-10 text-center shadow-sm relative overflow-hidden">
-          <div className={`absolute top-0 left-0 w-full h-2 ${isPass ? "bg-green-500" : "bg-destructive"}`} />
+          <div
+            className={`absolute top-0 left-0 w-full h-2 ${isPass ? "bg-green-500" : "bg-destructive"}`}
+          />
           <h1 className="text-3xl font-bold tracking-tight mb-2">{attempt.exams?.title}</h1>
           <p className="text-muted-foreground mb-8">Đã hoàn thành bởi {attempt.student_name}</p>
 
           <div className="flex justify-center mb-8">
-            <div className={`flex h-32 w-32 flex-col items-center justify-center rounded-full border-8 ${isPass ? "border-green-500 text-green-600" : "border-destructive text-destructive"}`}>
+            <div
+              className={`flex h-32 w-32 flex-col items-center justify-center rounded-full border-8 ${isPass ? "border-green-500 text-green-600" : "border-destructive text-destructive"}`}
+            >
               <span className="text-4xl font-black">{score.toFixed(1)}</span>
               <span className="text-sm font-semibold">/ 10</span>
             </div>
@@ -122,7 +124,8 @@ function ResultPage() {
             <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                <span className="font-semibold">{timeSpentMins}</span>m <span className="font-semibold">{timeSpentSecs}</span>s
+                <span className="font-semibold">{timeSpentMins}</span>m{" "}
+                <span className="font-semibold">{timeSpentSecs}</span>s
               </span>
             </div>
           </div>
@@ -137,7 +140,10 @@ function ResultPage() {
             const options = q.options as string[];
 
             return (
-              <div key={q.id} className={`rounded-xl border bg-card p-4 sm:p-6 shadow-sm ${isCorrect ? "border-l-4 border-l-green-500" : "border-l-4 border-l-destructive"}`}>
+              <div
+                key={q.id}
+                className={`rounded-xl border bg-card p-4 sm:p-6 shadow-sm ${isCorrect ? "border-l-4 border-l-green-500" : "border-l-4 border-l-destructive"}`}
+              >
                 <div className="flex gap-4">
                   <div className="mt-1">
                     {isCorrect ? (
@@ -161,20 +167,28 @@ function ResultPage() {
 
                         let ringClass = "border bg-muted/30";
                         if (isActualCorrect) {
-                          ringClass = "border-green-500 bg-green-500/10 font-semibold text-green-700 dark:text-green-400";
+                          ringClass =
+                            "border-green-500 bg-green-500/10 font-semibold text-green-700 dark:text-green-400";
                         } else if (isStudentChoice && !isCorrect) {
                           ringClass = "border-destructive bg-destructive/10 text-destructive";
                         }
 
                         return (
-                          <div key={optIdx} className={`flex items-center justify-between rounded-lg p-3 ${ringClass}`}>
+                          <div
+                            key={optIdx}
+                            className={`flex items-center justify-between rounded-lg p-3 ${ringClass}`}
+                          >
                             <div className="flex items-center gap-2">
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold border">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
                               <span className="text-sm">{opt}</span>
                             </div>
-                            {isStudentChoice && <span className="text-xs font-bold uppercase tracking-wider opacity-70">Bạn đã chọn</span>}
+                            {isStudentChoice && (
+                              <span className="text-xs font-bold uppercase tracking-wider opacity-70">
+                                Bạn đã chọn
+                              </span>
+                            )}
                           </div>
                         );
                       })}

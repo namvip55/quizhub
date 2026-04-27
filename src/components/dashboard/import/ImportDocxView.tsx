@@ -11,7 +11,15 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2, ChevronRight, FileText, Upload, UploadCloud, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  FileText,
+  Upload,
+  UploadCloud,
+  Loader2,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import mammoth from "mammoth";
@@ -75,8 +83,8 @@ export function ImportDocxView() {
           "r[color='FFFF00'] => mark.color-yellow",
           "r[color='00FF00'] => mark.color-green",
           "r[color='00B050'] => mark.color-stdgreen",
-          "r[color='92D050'] => mark.color-lightgreen"
-        ]
+          "r[color='92D050'] => mark.color-lightgreen",
+        ],
       };
       const result = await mammoth.convertToHtml({ arrayBuffer }, options);
       parseHtmlText(result.value);
@@ -105,14 +113,19 @@ export function ImportDocxView() {
     // Regex to detect multiple inline options on one line
     // Matches patterns like: A. xxx  B. xxx  C. xxx  D. xxx  or  1. xxx  2. xxx  3. xxx  4. xxx
     // Also handles *A. xxx (asterisk marking correct answer)
-    const inlineOptionsRegex = /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))/g;
+    const inlineOptionsRegex =
+      /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))/g;
 
     const stripHintTags = (html: string) => {
       // Remove <mark> tags but keep their content
       return html.replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1").trim();
     };
 
-    const tryParseInlineOptions = (text: string, htmlContent: string, hasMark: boolean): boolean => {
+    const tryParseInlineOptions = (
+      text: string,
+      htmlContent: string,
+      hasMark: boolean,
+    ): boolean => {
       const matches = text.match(inlineOptionsRegex);
       if (!matches || matches.length < 2) return false;
 
@@ -168,7 +181,7 @@ export function ImportDocxView() {
       const oMatch = text.match(optionRegex);
       const aMatch = text.match(answerRegex);
       const eMatch = text.match(explainRegex);
-      
+
       const hasMark = el.querySelector("mark") !== null;
 
       // --- Bare asterisk: "* option text" without A/B/C/D prefix ---
@@ -177,14 +190,20 @@ export function ImportDocxView() {
       const isBareAsterisk = bareAsteriskMatch && !oMatch; // don't double-count if oMatch already catches *A.
 
       // --- Detect start of a new question (either with prefix or all-in-one line) ---
-      const isInlineWithQuestion = text.match(inlineOptionsRegex) && text.split(inlineOptionsRegex)[0].trim().length > 0;
+      const isInlineWithQuestion =
+        text.match(inlineOptionsRegex) && text.split(inlineOptionsRegex)[0].trim().length > 0;
 
       if (qMatch || isInlineWithQuestion) {
         if (currentQ.content) questions.push(finalizeQuestion(currentQ));
-        
+
         if (qMatch) {
           const contentPart = htmlContent.replace(questionRegex, "$2");
-          currentQ = { content: contentPart || text, options: [], correct_answer: -1, explanation: "" };
+          currentQ = {
+            content: contentPart || text,
+            options: [],
+            correct_answer: -1,
+            explanation: "",
+          };
           isExplaining = false;
           // Try to see if there are inline options on this same line
           tryParseInlineOptions(text, htmlContent, hasMark);
@@ -198,7 +217,11 @@ export function ImportDocxView() {
       }
 
       // --- Try inline multi-option for lines that are ONLY options ---
-      if (currentQ.content && currentQ.options!.length === 0 && tryParseInlineOptions(text, htmlContent, hasMark)) {
+      if (
+        currentQ.content &&
+        currentQ.options!.length === 0 &&
+        tryParseInlineOptions(text, htmlContent, hasMark)
+      ) {
         // Successfully parsed inline options, skip other checks
         return;
       }
@@ -221,7 +244,7 @@ export function ImportDocxView() {
         // Clean HTML from hints but keep structures
         currentQ.options![optIdx] = stripHintTags(htmlContent.replace(optionRegex, "$3"));
         isExplaining = false;
-        
+
         if (hasMark || isAsterisk) currentQ.correct_answer = optIdx;
       } else if (isBareAsterisk && currentQ.content && currentQ.options!.length < 4) {
         // Bare * line — clean it up
@@ -232,7 +255,9 @@ export function ImportDocxView() {
         isExplaining = false;
       } else if (aMatch) {
         const ansLabel = aMatch[2].toUpperCase();
-        currentQ.correct_answer = /[1-4]/.test(ansLabel) ? parseInt(ansLabel) - 1 : ansLabel.charCodeAt(0) - 65;
+        currentQ.correct_answer = /[1-4]/.test(ansLabel)
+          ? parseInt(ansLabel) - 1
+          : ansLabel.charCodeAt(0) - 65;
         isExplaining = false;
       } else if (eMatch) {
         currentQ.explanation = htmlContent.replace(explainRegex, "$2") || "";
@@ -263,8 +288,7 @@ export function ImportDocxView() {
   const finalizeQuestion = (q: Partial<ParsedQuestion>): ParsedQuestion => {
     let error;
     if (!q.content) error = "Thiếu nội dung câu hỏi";
-    else if (!q.options || q.options.length !== 4)
-      error = "Cần chính xác 4 lựa chọn (A, B, C, D)";
+    else if (!q.options || q.options.length !== 4) error = "Cần chính xác 4 lựa chọn (A, B, C, D)";
     else if (q.correct_answer === undefined || q.correct_answer < 0 || q.correct_answer > 3)
       error = "Thiếu hoặc sai đáp án đúng (Đảm bảo đã bôi màu đáp án trong file DOCX)";
 
@@ -302,28 +326,35 @@ export function ImportDocxView() {
       }));
 
       // 1. Create Exam
-      const { data: examData, error: examError } = await supabase.from("exams").insert({
-        title: "Đề từ file " + fileName,
-        duration: 60,
-        published: false,
-        allow_retry: true,
-        max_attempts: 36,
-        subject_id: subjectId,
-        exam_code: generateCode(),
-        created_by: user!.id,
-      }).select().single();
+      const { data: examData, error: examError } = await supabase
+        .from("exams")
+        .insert({
+          title: "Đề từ file " + fileName,
+          duration: 60,
+          published: false,
+          allow_retry: true,
+          max_attempts: 36,
+          subject_id: subjectId,
+          exam_code: generateCode(),
+          created_by: user!.id,
+        })
+        .select()
+        .single();
 
       if (examError) throw examError;
 
       // 2. Insert questions
-      const { data: qData, error: qError } = await supabase.from("questions").insert(questionsPayload).select("id");
+      const { data: qData, error: qError } = await supabase
+        .from("questions")
+        .insert(questionsPayload)
+        .select("id");
       if (qError) throw qError;
 
       // 3. Map questions to exam
       const eqPayload = qData.map((q, idx) => ({
         exam_id: examData.id,
         question_id: q.id,
-        order_index: idx
+        order_index: idx,
       }));
 
       const { error: eqError } = await supabase.from("exam_questions").insert(eqPayload);
@@ -372,9 +403,18 @@ export function ImportDocxView() {
             </div>
             <div>
               <label className="text-sm font-medium leading-none block mb-2">Tải file lên</label>
-              <Button asChild variant="outline" className="w-full relative overflow-hidden" disabled={isParsing}>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full relative overflow-hidden"
+                disabled={isParsing}
+              >
                 <label className="cursor-pointer">
-                  {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                  {isParsing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
                   {isParsing ? "Đang xử lý DOCX..." : "Chọn file .docx"}
                   <input
                     type="file"
@@ -401,7 +441,8 @@ export function ImportDocxView() {
                 <code className="text-primary">C/</code>
               </li>
               <li>
-                Đáp án đúng: Tô màu <strong>vàng</strong> hoặc <strong>xanh lá</strong> cho lựa chọn đó, HOẶC viết <code className="text-primary">Đáp án: A</code>
+                Đáp án đúng: Tô màu <strong>vàng</strong> hoặc <strong>xanh lá</strong> cho lựa chọn
+                đó, HOẶC viết <code className="text-primary">Đáp án: A</code>
               </li>
               <li>
                 Dòng giải thích: <code className="text-primary">Giải thích: ...</code>
@@ -440,7 +481,9 @@ export function ImportDocxView() {
                   <tr key={idx} className="border-b transition-colors">
                     <td className="p-4 text-center">
                       {q.error ? (
-                        <span title={q.error}><AlertCircle className="h-5 w-5 text-destructive mx-auto" /></span>
+                        <span title={q.error}>
+                          <AlertCircle className="h-5 w-5 text-destructive mx-auto" />
+                        </span>
                       ) : (
                         <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
                       )}
@@ -488,7 +531,9 @@ export function ImportDocxView() {
                             placeholder="Giải thích..."
                           />
                         )}
-                        {q.error && <p className="text-xs text-destructive mt-1 font-medium">{q.error}</p>}
+                        {q.error && (
+                          <p className="text-xs text-destructive mt-1 font-medium">{q.error}</p>
+                        )}
                       </div>
                     </td>
                   </tr>

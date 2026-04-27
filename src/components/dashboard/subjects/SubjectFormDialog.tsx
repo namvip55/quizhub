@@ -40,7 +40,11 @@ export function SubjectFormDialog({
   useEffect(() => {
     if (open) {
       if (subject) {
-        form.reset({ name: subject.name, subject_code: subject.subject_code || "", description: subject.description || "" });
+        form.reset({
+          name: subject.name,
+          subject_code: subject.subject_code || "",
+          description: subject.description || "",
+        });
       } else {
         form.reset({ name: "", subject_code: "", description: "" });
       }
@@ -51,9 +55,9 @@ export function SubjectFormDialog({
     mutationFn: async (values: SubjectFormValues) => {
       const payload = { ...values };
       if (!payload.subject_code) {
-        delete payload.subject_code; 
+        delete payload.subject_code;
       }
-      
+
       if (subject) {
         return subjectService.updateSubject(subject.id, payload);
       } else {
@@ -91,9 +95,15 @@ export function SubjectFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="subject_code">Mã học phần</Label>
-              <Input id="subject_code" placeholder="Tự động tạo nếu để trống" {...form.register("subject_code")} />
+              <Input
+                id="subject_code"
+                placeholder="Tự động tạo nếu để trống"
+                {...form.register("subject_code")}
+              />
               {form.formState.errors.subject_code && (
-                <p className="text-xs text-destructive">{form.formState.errors.subject_code.message}</p>
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.subject_code.message}
+                </p>
               )}
             </div>
           </div>

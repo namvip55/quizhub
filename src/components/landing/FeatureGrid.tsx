@@ -1,11 +1,4 @@
-import { 
-  BookOpen, 
-  Timer, 
-  ShieldCheck, 
-  BarChart3, 
-  GraduationCap, 
-  Sparkles 
-} from "lucide-react";
+import { BookOpen, Timer, ShieldCheck, BarChart3, GraduationCap, Sparkles } from "lucide-react";
 
 const FEATURES = [
   {

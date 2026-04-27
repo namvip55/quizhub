@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +22,13 @@ interface SubjectExamsDialogProps {
   userRole: string;
 }
 
-export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName, userRole }: SubjectExamsDialogProps) {
+export function SubjectExamsDialog({
+  open,
+  onOpenChange,
+  subjectId,
+  subjectName,
+  userRole,
+}: SubjectExamsDialogProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editingExam, setEditingExam] = useState<any>(null);
@@ -29,11 +41,11 @@ export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName,
         .select("*")
         .eq("subject_id", subjectId)
         .order("created_at", { ascending: false });
-        
+
       if (userRole === "student") {
         query = query.eq("published", true);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -65,7 +77,9 @@ export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName,
               </div>
             </DialogTitle>
             <DialogDescription>
-              {userRole === "teacher" ? "Quản lý đề thi của môn học này." : "Danh sách đề thi có sẵn để luyện tập hoặc làm bài."}
+              {userRole === "teacher"
+                ? "Quản lý đề thi của môn học này."
+                : "Danh sách đề thi có sẵn để luyện tập hoặc làm bài."}
             </DialogDescription>
           </DialogHeader>
 
@@ -81,52 +95,73 @@ export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName,
             ) : (
               <div className="grid gap-3">
                 {exams?.map((exam) => (
-                  <div key={exam.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card shadow-sm hover:border-primary/20 transition-colors">
+                  <div
+                    key={exam.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card shadow-sm hover:border-primary/20 transition-colors"
+                  >
                     <div>
                       <h4 className="font-medium">{exam.title}</h4>
                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>Mã: <span className="font-mono text-foreground">{exam.exam_code}</span></span>
+                        <span>
+                          Mã: <span className="font-mono text-foreground">{exam.exam_code}</span>
+                        </span>
                         <span>•</span>
                         <span>{exam.duration} phút</span>
                         {userRole === "teacher" && (
                           <>
                             <span>•</span>
-                            <span className={exam.published ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
+                            <span
+                              className={
+                                exam.published
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-amber-600 dark:text-amber-400"
+                              }
+                            >
                               {exam.published ? "Đã xuất bản" : "Bản nháp"}
                             </span>
                           </>
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {userRole === "student" ? (
                         <>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
-                            onClick={() => navigate({ to: "/practice/$examCode", params: { examCode: exam.exam_code } })}
+                            onClick={() =>
+                              navigate({
+                                to: "/practice/$examCode",
+                                params: { examCode: exam.exam_code },
+                              })
+                            }
                           >
                             <BookOpen className="mr-2 h-4 w-4" /> Luyện tập
                           </Button>
-                          <Button 
+                          <Button
                             size="sm"
-                            onClick={() => navigate({ to: "/lobby/$examCode", params: { examCode: exam.exam_code } })}
+                            onClick={() =>
+                              navigate({
+                                to: "/lobby/$examCode",
+                                params: { examCode: exam.exam_code },
+                              })
+                            }
                           >
                             <Play className="mr-2 h-4 w-4" /> Làm bài
                           </Button>
                         </>
                       ) : (
                         <>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="icon"
                             onClick={() => setEditingExam(exam)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="icon"
                             className="text-destructive hover:bg-destructive/10"
                             onClick={() => {
@@ -147,7 +182,7 @@ export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName,
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Teacher Edit Dialog */}
       {editingExam && (
         <ExamFormDialog
@@ -160,6 +195,7 @@ export function SubjectExamsDialog({ open, onOpenChange, subjectId, subjectName,
             }
           }}
           exam={editingExam}
+          subjects={[{ id: subjectId, name: subjectName } as any]}
         />
       )}
     </>

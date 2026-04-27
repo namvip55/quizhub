@@ -32,9 +32,10 @@ function AboutPage() {
               Mục đích phát triển
             </h3>
             <p className="text-muted-foreground leading-relaxed">
-              QuizHub được tạo ra với mục tiêu hỗ trợ việc ôn luyện và thi trắc nghiệm trực tuyến một cách 
-              đơn giản, hiệu quả và hiện đại nhất. Dự án chủ yếu phục vụ nhu cầu học tập 
-              <span className="text-foreground font-medium"> cá nhân và bạn bè</span>, giúp việc quản lý ngân hàng câu hỏi và làm bài thi trở nên dễ dàng hơn bao giờ hết.
+              QuizHub được tạo ra với mục tiêu hỗ trợ việc ôn luyện và thi trắc nghiệm trực tuyến
+              một cách đơn giản, hiệu quả và hiện đại nhất. Dự án chủ yếu phục vụ nhu cầu học tập
+              <span className="text-foreground font-medium"> cá nhân và bạn bè</span>, giúp việc
+              quản lý ngân hàng câu hỏi và làm bài thi trở nên dễ dàng hơn bao giờ hết.
             </p>
           </section>
 
@@ -44,20 +45,22 @@ function AboutPage() {
               Thông tin liên hệ
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a 
-                href="mailto:namcho376@gmail.com" 
+              <a
+                href="mailto:namcho376@gmail.com"
                 className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 hover:bg-primary/10 transition-colors border border-border/40 group"
               >
                 <div className="p-2 rounded-full bg-background group-hover:scale-110 transition-transform">
                   <Mail className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Email</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+                    Email
+                  </div>
                   <div className="text-sm font-medium">namcho376@gmail.com</div>
                 </div>
               </a>
-              <a 
-                href="https://github.com/namvip55/quizhub" 
+              <a
+                href="https://github.com/namvip55/quizhub"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 hover:bg-primary/10 transition-colors border border-border/40 group"
@@ -66,7 +69,9 @@ function AboutPage() {
                   <Github className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">GitHub</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+                    GitHub
+                  </div>
                   <div className="text-sm font-medium">github.com/namvip55/quizhub</div>
                 </div>
               </a>
@@ -79,19 +84,20 @@ function AboutPage() {
               Ủng hộ nhà phát triển
             </h3>
             <p className="text-sm text-muted-foreground">
-              Nếu bạn thấy ứng dụng hữu ích, hãy ủng hộ mình một tách cà phê để có thêm động lực duy trì và phát triển thêm nhiều tính năng mới nhé!
+              Nếu bạn thấy ứng dụng hữu ích, hãy ủng hộ mình một tách cà phê để có thêm động lực duy
+              trì và phát triển thêm nhiều tính năng mới nhé!
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-6 mt-4">
               <div className="bg-white p-2 rounded-lg shrink-0">
-                <img 
-                  src="/vibe.jpg" 
-                  alt="QR Code" 
-                  className="h-32 w-auto object-contain"
-                />
+                <img src="/vibe.jpg" alt="QR Code" className="h-32 w-auto object-contain" />
               </div>
               <div className="text-center sm:text-left">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Ngân hàng BIDV</div>
-                <div className="text-2xl font-mono font-bold text-primary tracking-wider">8833519981</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+                  Ngân hàng BIDV
+                </div>
+                <div className="text-2xl font-mono font-bold text-primary tracking-wider">
+                  8833519981
+                </div>
                 <div className="text-sm font-medium opacity-80 mt-1">Nam vibe</div>
               </div>
             </div>

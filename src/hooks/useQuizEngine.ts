@@ -6,7 +6,7 @@ export function useQuizEngine(questions: Question[], tingTingSound: string) {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [stagedAnswer, setStagedAnswer] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -27,11 +27,11 @@ export function useQuizEngine(questions: Question[], tingTingSound: string) {
 
     const optionIdx = stagedAnswer;
     setSelectedAnswers((prev) => ({ ...prev, [currentIndex]: optionIdx }));
-    
+
     const isCorrect = optionIdx === currentQuestion.correct_answer;
     if (isCorrect && audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => console.log("Audio play blocked", e));
+      audioRef.current.play().catch((e) => console.log("Audio play blocked", e));
     }
     setStagedAnswer(null);
   };

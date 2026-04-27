@@ -24,7 +24,8 @@ export function HeroSection() {
           </span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          QuizHub cung cấp cho giáo viên ngân hàng câu hỏi đẹp mắt, bài thi có thời gian với mã chia sẻ, và phân tích kết quả học sinh ngay lập tức — tất cả trong một bảng điều khiển.
+          QuizHub cung cấp cho giáo viên ngân hàng câu hỏi đẹp mắt, bài thi có thời gian với mã chia
+          sẻ, và phân tích kết quả học sinh ngay lập tức — tất cả trong một bảng điều khiển.
         </p>
 
         <JoinExamForm />

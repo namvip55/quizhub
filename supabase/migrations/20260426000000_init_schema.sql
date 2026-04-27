@@ -30,6 +30,7 @@ create table if not exists public.profiles (
 create table if not exists public.subjects (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null,
+  subject_code text not null unique,
   name text not null,
   description text,
   created_at timestamptz not null default now(),
@@ -79,6 +80,7 @@ create table if not exists public.exam_attempts (
   exam_id uuid not null references public.exams(id) on delete cascade,
   student_id uuid,                      -- null = anonymous student
   student_name text not null default '',
+  anon_secret text,                     -- added to secure anon attempts
   answers jsonb not null default '{}'::jsonb,
   score numeric,
   is_finished boolean not null default false,
@@ -86,6 +88,14 @@ create table if not exists public.exam_attempts (
   submitted_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- ---------- vw_top_subjects ----------
+create or replace view public.vw_top_subjects as
+select s.id, s.teacher_id, s.subject_code, s.name, s.description, s.created_at, s.updated_at, count(ea.id) as attempts_count
+from public.subjects s
+left join public.exams e on e.subject_id = s.id
+left join public.exam_attempts ea on ea.exam_id = e.id
+group by s.id;
 
 -- =========================================================
 -- FUNCTIONS
@@ -135,6 +145,117 @@ begin
 end;
 $$;
 
+-- check_max_attempts trigger function
+create or replace function public.check_max_attempts()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_max_attempts int;
+  v_allow_retry boolean;
+  v_current_attempts int;
+begin
+  select max_attempts, allow_retry into v_max_attempts, v_allow_retry
+  from public.exams where id = new.exam_id;
+  
+  if not v_allow_retry then
+    v_max_attempts := 1;
+  end if;
+
+  if new.student_id is not null then
+    select count(*) into v_current_attempts
+    from public.exam_attempts
+    where exam_id = new.exam_id and student_id = new.student_id;
+    
+    if v_current_attempts >= v_max_attempts then
+      raise exception 'Maximum attempts reached for this exam';
+    end if;
+  else
+    select count(*) into v_current_attempts
+    from public.exam_attempts
+    where exam_id = new.exam_id and student_name = new.student_name and student_id is null;
+    
+    if v_current_attempts >= v_max_attempts then
+      raise exception 'Maximum attempts reached for this name';
+    end if;
+  end if;
+  
+  return new;
+end;
+$$;
+
+-- Secure RPC for anonymous / student fetching
+create or replace function public.get_exam_attempt(attempt_id uuid, secret text default null)
+returns setof public.exam_attempts
+language sql
+security definer
+as $$
+  select * from public.exam_attempts
+  where id = attempt_id
+  and (
+    (student_id = auth.uid()) or
+    (student_id is null and anon_secret = secret) or
+    (exists (select 1 from public.exams e where e.id = exam_attempts.exam_id and e.created_by = auth.uid()))
+  );
+$$;
+
+-- Secure RPC for submitting attempt
+create or replace function public.submit_exam_attempt(
+  attempt_id uuid, 
+  user_answers jsonb,
+  secret text default null
+)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  v_attempt public.exam_attempts;
+  v_correct_count int := 0;
+  v_total_count int := 0;
+  v_score numeric := 0;
+  v_q record;
+begin
+  select * into v_attempt from public.exam_attempts 
+  where id = attempt_id 
+    and is_finished = false
+    and (
+      (student_id = auth.uid()) or
+      (student_id is null and anon_secret = secret)
+    );
+
+  if not found then
+    raise exception 'Attempt not found or unauthorized';
+  end if;
+
+  select count(*) into v_total_count from public.exam_questions where exam_id = v_attempt.exam_id;
+  
+  for v_q in (
+    select q.id, q.correct_answer 
+    from public.exam_questions eq
+    join public.questions q on q.id = eq.question_id
+    where eq.exam_id = v_attempt.exam_id
+  ) loop
+    if user_answers->>v_q.id::text = v_q.correct_answer::text then
+      v_correct_count := v_correct_count + 1;
+    end if;
+  end loop;
+
+  if v_total_count > 0 then
+    v_score := (v_correct_count::numeric / v_total_count) * 10;
+  end if;
+
+  update public.exam_attempts
+  set answers = user_answers,
+      score = v_score,
+      is_finished = true,
+      submitted_at = now()
+  where id = attempt_id;
+end;
+$$;
+
 -- =========================================================
 -- TRIGGERS
 -- =========================================================
@@ -155,6 +276,11 @@ create trigger trg_profiles_updated  before update on public.profiles  for each 
 create trigger trg_subjects_updated  before update on public.subjects  for each row execute function public.set_updated_at();
 create trigger trg_questions_updated before update on public.questions for each row execute function public.set_updated_at();
 create trigger trg_exams_updated     before update on public.exams     for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_check_max_attempts on public.exam_attempts;
+create trigger trg_check_max_attempts
+before insert on public.exam_attempts
+for each row execute function public.check_max_attempts();
 
 -- =========================================================
 -- ENABLE ROW LEVEL SECURITY
@@ -236,20 +362,14 @@ with check (
   and (student_id is null or student_id = auth.uid())
 );
 
-create policy "Attempts: update own in-flight"
-on public.exam_attempts for update to anon, authenticated
+create policy "Attempts: student updates own in-flight"
+on public.exam_attempts for update to authenticated
 using (
   is_finished = false
-  and exists (select 1 from public.exams e where e.id = exam_attempts.exam_id and e.published = true)
+  and student_id = auth.uid()
 )
 with check (
-  exists (select 1 from public.exams e where e.id = exam_attempts.exam_id and e.published = true)
-);
-
-create policy "Attempts: readable by id for published exam"
-on public.exam_attempts for select to anon
-using (
-  exists (select 1 from public.exams e where e.id = exam_attempts.exam_id and e.published = true)
+  student_id = auth.uid()
 );
 
 create policy "Attempts: student reads own"

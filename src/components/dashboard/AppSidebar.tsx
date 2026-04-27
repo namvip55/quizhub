@@ -39,7 +39,11 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <Link to="/dashboard" onClick={() => setOpenMobile(false)} className="flex items-center gap-2 px-2 py-1.5 focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <Link
+          to="/dashboard"
+          onClick={() => setOpenMobile(false)}
+          className="flex items-center gap-2 px-2 py-1.5 focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+        >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[image:var(--gradient-primary)]">
             <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </div>
@@ -56,7 +60,11 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <Link to={item.url} onClick={() => setOpenMobile(false)} aria-label={item.title}>
+                      <Link
+                        to={item.url}
+                        onClick={() => setOpenMobile(false)}
+                        aria-label={item.title}
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>

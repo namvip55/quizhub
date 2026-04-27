@@ -10,18 +10,14 @@ export const subjectService = {
       .select("*")
       .eq("teacher_id", userId)
       .order("created_at", { ascending: false });
-    
+
     if (error) throw error;
     return data || [];
   },
 
   createSubject: async (payload: TablesInsert<"subjects">): Promise<Subject> => {
-    const { data, error } = await supabase
-      .from("subjects")
-      .insert([payload])
-      .select()
-      .single();
-    
+    const { data, error } = await supabase.from("subjects").insert([payload]).select().single();
+
     if (error) throw error;
     return data;
   },
@@ -33,7 +29,7 @@ export const subjectService = {
       .eq("id", id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },

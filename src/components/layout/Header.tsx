@@ -32,42 +32,28 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate({ to: profile?.role === "teacher" ? "/dashboard/subjects" : "/student" })}
+                onClick={() =>
+                  navigate({ to: profile?.role === "teacher" ? "/dashboard/subjects" : "/student" })
+                }
               >
                 Bảng điều khiển
               </Button>
-              <Link
-                to="/about"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
+              <Link to="/about" className={buttonVariants({ variant: "ghost", size: "sm" })}>
                 Thông tin
               </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-              >
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Đăng xuất
               </Button>
             </>
           ) : (
             <>
-              <Link
-                to="/about"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
+              <Link to="/about" className={buttonVariants({ variant: "ghost", size: "sm" })}>
                 Thông tin
               </Link>
-              <Link
-                to="/login"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
+              <Link to="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
                 Đăng nhập
               </Link>
-              <Button
-                size="sm"
-                onClick={() => navigate({ to: "/register" })}
-              >
+              <Button size="sm" onClick={() => navigate({ to: "/register" })}>
                 Bắt đầu
               </Button>
             </>

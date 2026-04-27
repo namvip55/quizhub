@@ -12,11 +12,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/register")({
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      redirect: search.redirect as string | undefined,
-    };
-  },
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Tạo tài khoản — QuizHub" },
@@ -46,7 +44,8 @@ function RegisterPage() {
 
   useEffect(() => {
     if (!loading && user && profile) {
-      const dest = search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
+      const dest =
+        search.redirect ?? (profile.role === "teacher" ? "/dashboard/subjects" : "/student");
       navigate({ to: dest });
     }
   }, [user, profile, loading, navigate, search.redirect]);

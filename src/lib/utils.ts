@@ -10,11 +10,13 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function cleanQuizText(html: string): string {
   if (!html) return "";
-  
-  return html
-    // Remove mark tags but keep content
-    .replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1")
-    // Remove leading asterisks which are often used as correct answer markers
-    .replace(/^\s*\*\s*/g, "")
-    .trim();
+
+  return (
+    html
+      // Remove mark tags but keep content
+      .replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1")
+      // Remove leading asterisks which are often used as correct answer markers
+      .replace(/^\s*\*\s*/g, "")
+      .trim()
+  );
 }

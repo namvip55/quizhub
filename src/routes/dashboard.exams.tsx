@@ -61,7 +61,7 @@ function ExamsPage() {
 
   useEffect(() => {
     if (editExamId && exams) {
-      const examToEdit = exams.find(e => e.id === editExamId);
+      const examToEdit = exams.find((e) => e.id === editExamId);
       if (examToEdit) {
         setEditingExam(examToEdit);
         setIsDialogOpen(true);
@@ -111,9 +111,7 @@ function ExamsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Đề thi</h1>
           <p className="mt-1 text-sm text-muted-foreground">Tạo và quản lý các đề thi của bạn.</p>
         </div>
-        <Button
-          onClick={() => navigate({ to: "/dashboard/import" })}
-        >
+        <Button onClick={() => navigate({ to: "/dashboard/import" })}>
           <Plus className="mr-2 h-4 w-4" /> Import DOCX tạo đề
         </Button>
       </div>

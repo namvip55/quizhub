@@ -45,8 +45,8 @@ function SubjectsPage() {
     const q = search.toLowerCase();
     return (
       s.name.toLowerCase().includes(q) ||
-      (s.description?.toLowerCase().includes(q)) ||
-      (s.subject_code?.toLowerCase().includes(q))
+      s.description?.toLowerCase().includes(q) ||
+      s.subject_code?.toLowerCase().includes(q)
     );
   });
 
@@ -112,16 +112,23 @@ function SubjectsPage() {
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-mono text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">{subject.subject_code}</span>
+                  <span className="font-mono text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">
+                    {subject.subject_code}
+                  </span>
                 </div>
-                <h3 className="font-semibold leading-none tracking-tight group-hover:text-primary transition-colors">{subject.name}</h3>
+                <h3 className="font-semibold leading-none tracking-tight group-hover:text-primary transition-colors">
+                  {subject.name}
+                </h3>
                 {subject.description && (
                   <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                     {subject.description}
                   </p>
                 )}
               </div>
-              <div className="mt-6 flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+              <div
+                className="mt-6 flex items-center justify-end gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Button
                   variant="outline"
                   size="icon"

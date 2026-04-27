@@ -21,7 +21,7 @@ export function JoinExamForm() {
     setLoading(true);
     try {
       const exam = await examService.getExamByCode(code);
-      
+
       if (!exam) {
         toast.error("Mã bài thi không hợp lệ hoặc bài thi hiện không mở.");
         return;
@@ -46,12 +46,7 @@ export function JoinExamForm() {
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
         />
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full"
-          disabled={loading || code.length !== 6}
-        >
+        <Button type="submit" size="lg" className="w-full" disabled={loading || code.length !== 6}>
           {loading ? "Đang kiểm tra..." : "Tham gia bài thi"}
           {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
 
@@ -32,7 +32,7 @@ export class GlobalErrorBoundary extends React.Component<
             <Button onClick={() => window.location.reload()}>
               <RefreshCcw className="mr-2 h-4 w-4" /> Tải lại trang
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = '/'}>
+            <Button variant="outline" onClick={() => (window.location.href = "/")}>
               Về trang chủ
             </Button>
           </div>

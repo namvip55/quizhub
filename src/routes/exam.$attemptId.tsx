@@ -27,12 +27,18 @@ type QuestionRow = Database["public"]["Tables"]["questions"]["Row"];
 
 export const Route = createFileRoute("/exam/$attemptId")({
   head: () => ({ meta: [{ title: "Đang làm bài thi — QuizHub" }] }),
-  component: () => <GlobalErrorBoundary><ExamPage /></GlobalErrorBoundary>,
+  component: () => (
+    <GlobalErrorBoundary>
+      <ExamPage />
+    </GlobalErrorBoundary>
+  ),
 });
 
 function formatTime(seconds: number) {
   if (seconds < 0) return "00:00";
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
@@ -52,7 +58,7 @@ const TimerDisplay = memo(function TimerDisplay({
   useEffect(() => {
     const durationSeconds = durationMinutes * 60;
     const startedAt = new Date(startedAtIso).getTime();
-    
+
     let isFinished = false;
 
     const interval = setInterval(() => {
@@ -60,7 +66,7 @@ const TimerDisplay = memo(function TimerDisplay({
       const now = new Date().getTime();
       const elapsed = Math.floor((now - startedAt) / 1000);
       const remaining = durationSeconds - elapsed;
-      
+
       setTimeLeft(remaining);
 
       if (remaining <= 0) {
@@ -101,7 +107,7 @@ const QuestionItem = memo(function QuestionItem({
   onSelect: (qId: string, idx: number) => void;
 }) {
   const options = q.options as string[];
-  
+
   return (
     <div className="rounded-xl border bg-card p-4 sm:p-6 shadow-sm" id={`q-${index}`}>
       <div className="flex flex-col sm:flex-row gap-4">
@@ -157,7 +163,8 @@ function ExamPage() {
           <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Liên kết không hợp lệ</h2>
           <p className="text-muted-foreground mb-4">
-            Đây không phải URL bài thi hợp lệ.<br />
+            Đây không phải URL bài thi hợp lệ.
+            <br />
             Nếu bạn có mã bài thi, hãy nhập ở trang chủ.
           </p>
           <Button onClick={() => navigate({ to: "/" })}>Nhập mã bài thi</Button>
@@ -168,13 +175,22 @@ function ExamPage() {
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
 
-  const { data: attempt, isLoading: attemptLoading, error } = useQuery({
+  const {
+    data: attempt,
+    isLoading: attemptLoading,
+    error,
+  } = useQuery({
     queryKey: ["exam-attempt", attemptId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("exam_attempts")
+        .rpc("get_exam_attempt", {
+          attempt_id: attemptId,
+          secret:
+            localStorage.getItem("quizhub_anon_session_secret") ||
+            localStorage.getItem(`anon_secret_${attemptId}`) ||
+            null,
+        })
         .select("*, exams(*)")
-        .eq("id", attemptId)
         .single();
       if (error) throw error;
       if (data.is_finished) {
@@ -203,54 +219,60 @@ function ExamPage() {
 
   useEffect(() => {
     if (!attempt || attempt.is_finished) return;
-    const saved = localStorage.getItem(`exam_${attemptId}_answers`);
-    if (saved) {
-      try {
-        setAnswers(JSON.parse(saved));
-      } catch (e) {
-        // Ignored
-      }
+    if (attempt.answers && Object.keys(attempt.answers).length > 0) {
+      setAnswers(attempt.answers as Record<string, number>);
     }
   }, [attempt, attemptId]);
+
+  const saveProgressMutation = useMutation({
+    mutationFn: async (currentAnswers: Record<string, number>) => {
+      const { error } = await supabase.rpc("save_attempt_progress", {
+        p_attempt_id: attemptId,
+        p_answers: currentAnswers,
+        p_secret:
+          localStorage.getItem("quizhub_anon_session_secret") ||
+          localStorage.getItem(`anon_secret_${attemptId}`) ||
+          null,
+      });
+      if (error) throw error;
+    },
+  });
+
+  const [debouncedAnswers, setDebouncedAnswers] = useState(answers);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedAnswers(answers);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [answers]);
+
+  useEffect(() => {
+    if (!attempt || attempt.is_finished || Object.keys(debouncedAnswers).length === 0) return;
+    saveProgressMutation.mutate(debouncedAnswers);
+  }, [debouncedAnswers]);
 
   const handleSelectAnswer = useCallback((qId: string, idx: number) => {
     setAnswers((prev) => {
       const next = { ...prev, [qId]: idx };
-      localStorage.setItem(`exam_${attemptId}_answers`, JSON.stringify(next));
       return next;
     });
-  }, [attemptId]);
+  }, []);
 
   const submitMutation = useMutation({
     mutationFn: async (currentAnswers: Record<string, number>) => {
-      let correctCount = 0;
-      if (questionsData) {
-        questionsData.forEach((qItem) => {
-          const q = qItem.questions;
-          if (currentAnswers[q.id] === q.correct_answer) {
-            correctCount++;
-          }
-        });
-      }
-
-      const score =
-        questionsData && questionsData.length > 0 ? (correctCount / questionsData.length) * 10 : 0;
-
-      const { error } = await supabase
-        .from("exam_attempts")
-        .update({
-          answers: currentAnswers,
-          score,
-          is_finished: true,
-          submitted_at: new Date().toISOString(),
-        })
-        .eq("id", attemptId);
+      const { error } = await supabase.rpc("submit_exam_attempt", {
+        attempt_id: attemptId,
+        user_answers: currentAnswers,
+        secret:
+          localStorage.getItem("quizhub_anon_session_secret") ||
+          localStorage.getItem(`anon_secret_${attemptId}`) ||
+          null,
+      });
 
       if (error) throw error;
       return true;
     },
     onSuccess: () => {
-      localStorage.removeItem(`exam_${attemptId}_answers`);
       toast.success("Đã nộp bài thành công!");
       navigate({ to: "/result/$attemptId", params: { attemptId }, replace: true });
     },
@@ -289,7 +311,9 @@ function ExamPage() {
         <div>
           <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Không tải được bài thi</h2>
-          <p className="text-muted-foreground mb-4">Bạn có thể đã nộp bài trước đó hoặc mạng bị lỗi.</p>
+          <p className="text-muted-foreground mb-4">
+            Bạn có thể đã nộp bài trước đó hoặc mạng bị lỗi.
+          </p>
           <Button onClick={() => navigate({ to: "/" })}>Quay lại trang chủ</Button>
         </div>
       </div>
@@ -309,7 +333,9 @@ function ExamPage() {
               size="icon"
               className="sm:hidden shrink-0"
               onClick={() => {
-                if (confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ không được lưu.")) {
+                if (
+                  confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ được lưu trên hệ thống.")
+                ) {
                   navigate({ to: "/student" });
                 }
               }}
@@ -325,16 +351,20 @@ function ExamPage() {
               </span>
             </div>
 
-            <TimerDisplay 
-              durationMinutes={attempt.exams.duration} 
-              startedAtIso={attempt.started_at} 
-              onTimeUp={handleAutoSubmit} 
+            <TimerDisplay
+              durationMinutes={attempt.exams.duration}
+              startedAtIso={attempt.started_at}
+              onTimeUp={handleAutoSubmit}
             />
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={submitMutation.isPending} size="sm" className="sm:text-base">
-                  {submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Nộp bài"}
+                  {submitMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Nộp bài"
+                  )}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -349,13 +379,16 @@ function ExamPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Hủy</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => submitMutation.mutate(answers)} disabled={submitMutation.isPending}>
+                  <AlertDialogAction
+                    onClick={() => submitMutation.mutate(answers)}
+                    disabled={submitMutation.isPending}
+                  >
                     Xác nhận nộp
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            
+
             <Button
               variant="outline"
               size="sm"
