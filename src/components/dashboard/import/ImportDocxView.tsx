@@ -41,6 +41,70 @@ type ParsedQuestion = {
   error?: string;
 };
 
+const extractCorrectAnswersByQuestion = async (arrayBuffer: ArrayBuffer): Promise<number[]> => {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const documentXml = await zip.file("word/document.xml")?.async("string");
+
+  if (!documentXml) return [];
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(documentXml, "application/xml");
+  const paragraphs = Array.from(doc.getElementsByTagNameNS("*", "p"));
+  const correctAnswers: number[] = [];
+  const questionRegex = /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])(?:\s*\[<DE>\])?[:\s]*/i;
+
+  const getRunText = (run: Element) =>
+    Array.from(run.getElementsByTagNameNS("*", "t"))
+      .map((node) => node.textContent || "")
+      .join("");
+
+  const hasRunColorOrHighlight = (run: Element) => {
+    const properties = run.getElementsByTagNameNS("*", "rPr")[0];
+    if (!properties) return false;
+
+    return (
+      properties.getElementsByTagNameNS("*", "color").length > 0 ||
+      properties.getElementsByTagNameNS("*", "highlight").length > 0 ||
+      properties.getElementsByTagNameNS("*", "shd").length > 0
+    );
+  };
+
+  let currentQuestionIndex = -1;
+  let currentOptionIndex = 0;
+
+  paragraphs.forEach((paragraph) => {
+    const runs = Array.from(paragraph.getElementsByTagNameNS("*", "r"));
+    const paragraphText = runs.map(getRunText).join("").trim();
+
+    if (!paragraphText) return;
+
+    if (questionRegex.test(paragraphText)) {
+      currentQuestionIndex += 1;
+      currentOptionIndex = 0;
+      correctAnswers[currentQuestionIndex] = -1;
+      return;
+    }
+
+    if (!paragraphText.includes("[<$>]")) return;
+    if (currentQuestionIndex < 0) return;
+
+    const hasStyledMarker = runs.some((run) => {
+      if (!hasRunColorOrHighlight(run)) return false;
+      const runText = getRunText(run).replace(/\s+/g, "");
+      return /[\[\]<>$]/.test(runText);
+    });
+
+    if (hasStyledMarker) {
+      correctAnswers[currentQuestionIndex] = currentOptionIndex;
+    }
+
+    currentOptionIndex += 1;
+  });
+
+  return correctAnswers;
+};
+
 export function ImportDocxView() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -72,6 +136,7 @@ export function ImportDocxView() {
     setIsParsing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
+      const correctAnswersByQuestion = await extractCorrectAnswersByQuestion(arrayBuffer);
       // Use convertToHtml to preserve highlights as <mark> tags
       const options = {
         styleMap: [
@@ -87,7 +152,7 @@ export function ImportDocxView() {
         ],
       };
       const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-      parseHtmlText(result.value);
+      parseHtmlText(result.value, correctAnswersByQuestion);
     } catch (error) {
       toast.error("Lỗi khi đọc hoặc xử lý file DOCX.");
       console.error(error);
@@ -96,17 +161,18 @@ export function ImportDocxView() {
     }
   };
 
-  const parseHtmlText = (html: string) => {
+  const parseHtmlText = (html: string, correctAnswersByQuestion: number[]) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
     const questions: ParsedQuestion[] = [];
 
     let currentQ: Partial<ParsedQuestion> = { options: [] };
+    let currentQuestionIndex = -1;
 
-    const questionRegex = /^(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])\s*(.*)/i;
-    const optionRegex = /^(\*\s*)?([A-D1-4])(?:\s*[\[\.\/\)]\s*|\s+)(.*)/i;
-    const answerRegex = /^(Đáp\s*án|ĐA|Correct)[:\s]*([A-D1-4])/i;
-    const explainRegex = /^(Giải\s*thích|Explanation)[:\s]*(.*)/i;
+    const questionRegex = /^\s*(Câu\s+\d+|Question\s+\d+|Bài\s+\d+|\d+[\[\.\)])(?:\s*\[<DE>\])?[:\s]*(.*)/i;
+    const optionRegex = /^\s*(\*\s*)?(?:([A-D1-4])(?:\s*[\[\.\/\)]\s*|\s+)|\[<\$>\]\s*)(.*)/i;
+    const answerRegex = /^\s*(Đáp\s*án|ĐA|Correct)[:\s]*([A-D1-4])/i;
+    const explainRegex = /^\s*(Giải\s*thích|Explanation)[:\s]*(.*)/i;
 
     let isExplaining = false;
 
@@ -114,17 +180,41 @@ export function ImportDocxView() {
     // Matches patterns like: A. xxx  B. xxx  C. xxx  D. xxx  or  1. xxx  2. xxx  3. xxx  4. xxx
     // Also handles *A. xxx (asterisk marking correct answer)
     const inlineOptionsRegex =
-      /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))/g;
+      /((?:\*\s*[A-Da-d1-4](?:\s*[\[\.\/\)]|\s+))|(?:(?:^|\s+)[A-Da-d1-4]\s*[\[\.\/\)]))|(\[<\$>\])/g;
 
     const stripHintTags = (html: string) => {
       // Remove <mark> tags but keep their content
-      return html.replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1").trim();
+      let cleaned = html.replace(/<mark[^>]*>(.*?)<\/mark>/gi, "$1");
+      // Also remove markers if they are still present after tag stripping
+      cleaned = cleaned.replace(/\[<\$>\]\s*/gi, "");
+      cleaned = cleaned.replace(/\[<DE>\]\s*/gi, "");
+      cleaned = cleaned.replace(/\[&lt;\$&gt;\]\s*/gi, "");
+      cleaned = cleaned.replace(/\[&lt;DE&gt;\]\s*/gi, "");
+      // Remove "Câu X:", "Question X:", etc. prefixes
+      cleaned = cleaned.replace(/^\s*(?:Câu|Question|Bài|Bài tập)\s+\d+\s*[:\.]?\s*/i, "");
+      // Remove "A.", "B.", etc. prefixes for options
+      cleaned = cleaned.replace(/^\s*[A-D1-4]\s*[\[\.\/\)]\s*/i, "");
+      return cleaned.trim();
+    };
+
+    const hasCorrectAnswerHint = (el: Element) => {
+      return (
+        el.querySelector(
+          [
+            "mark",
+            "span[style*='color']",
+            "span[class*='color']",
+            "span[class*='highlight']",
+            "font[color]",
+          ].join(", "),
+        ) !== null
+      );
     };
 
     const tryParseInlineOptions = (
       text: string,
       htmlContent: string,
-      hasMark: boolean,
+      hasCorrectHint: boolean,
     ): boolean => {
       const matches = text.match(inlineOptionsRegex);
       if (!matches || matches.length < 2) return false;
@@ -136,8 +226,12 @@ export function ImportDocxView() {
         const content = (parts[i + 1] || "").trim();
         const isAst = marker.trim().startsWith("*");
         const labelMatch = marker.match(/([A-Da-d1-4])/);
-        if (labelMatch) {
-          extracted.push({ label: labelMatch[1].toUpperCase(), content, isAsterisk: isAst });
+        const isSpecialMarker = marker.includes("[<$>]");
+        if (labelMatch || isSpecialMarker) {
+          const label = labelMatch
+            ? labelMatch[1].toUpperCase()
+            : String.fromCharCode(65 + extracted.length);
+          extracted.push({ label, content, isAsterisk: isAst });
         }
       }
 
@@ -163,9 +257,7 @@ export function ImportDocxView() {
       extracted.forEach((opt, i) => {
         // Clean the option content from marks
         currentQ.options![i] = stripHintTags(opt.content);
-        if (opt.isAsterisk || hasMark) {
-          if (opt.isAsterisk) currentQ.correct_answer = i;
-        }
+        if (opt.isAsterisk || hasCorrectHint) currentQ.correct_answer = i;
       });
       isExplaining = false;
       return true;
@@ -182,7 +274,9 @@ export function ImportDocxView() {
       const aMatch = text.match(answerRegex);
       const eMatch = text.match(explainRegex);
 
-      const hasMark = el.querySelector("mark") !== null;
+      const xmlCorrectAnswer =
+        currentQuestionIndex >= 0 ? correctAnswersByQuestion[currentQuestionIndex] : -1;
+      const hasCorrectHint = hasCorrectAnswerHint(el);
 
       // --- Bare asterisk: "* option text" without A/B/C/D prefix ---
       // Treat as the next option and mark it correct
@@ -195,23 +289,28 @@ export function ImportDocxView() {
 
       if (qMatch || isInlineWithQuestion) {
         if (currentQ.content) questions.push(finalizeQuestion(currentQ));
+        currentQuestionIndex += 1;
 
         if (qMatch) {
-          const contentPart = htmlContent.replace(questionRegex, "$2");
           currentQ = {
-            content: contentPart || text,
+            content: stripHintTags(htmlContent),
             options: [],
-            correct_answer: -1,
+            correct_answer: correctAnswersByQuestion[currentQuestionIndex] ?? -1,
             explanation: "",
           };
           isExplaining = false;
           // Try to see if there are inline options on this same line
-          tryParseInlineOptions(text, htmlContent, hasMark);
+          tryParseInlineOptions(text, htmlContent, hasCorrectHint);
           return;
         } else {
           // All-in-one line without "Câu X" prefix (e.g., "Question text. A. b B. c")
-          currentQ = { content: "", options: [], correct_answer: -1, explanation: "" };
-          tryParseInlineOptions(text, htmlContent, hasMark);
+          currentQ = {
+            content: "",
+            options: [],
+            correct_answer: correctAnswersByQuestion[currentQuestionIndex] ?? -1,
+            explanation: "",
+          };
+          tryParseInlineOptions(text, htmlContent, hasCorrectHint);
           return;
         }
       }
@@ -220,7 +319,7 @@ export function ImportDocxView() {
       if (
         currentQ.content &&
         currentQ.options!.length === 0 &&
-        tryParseInlineOptions(text, htmlContent, hasMark)
+        tryParseInlineOptions(text, htmlContent, hasCorrectHint)
       ) {
         // Successfully parsed inline options, skip other checks
         return;
@@ -230,22 +329,29 @@ export function ImportDocxView() {
       let optIdx = -1;
       let isAsterisk = false;
 
-      if (oMatch && currentQ.content && currentQ.options!.length < 4) {
-        const optLabel = oMatch[2].toUpperCase();
-        optIdx = /[1-4]/.test(optLabel) ? parseInt(optLabel) - 1 : optLabel.charCodeAt(0) - 65;
+      if ((oMatch || text.startsWith("[<$>]")) && currentQ.content && currentQ.options!.length < 4) {
+        const optLabel = oMatch ? oMatch[2]?.toUpperCase() : null;
+        if (optLabel) {
+          optIdx = /[1-4]/.test(optLabel) ? parseInt(optLabel) - 1 : optLabel.charCodeAt(0) - 65;
+        } else {
+          // Case for [<$>] marker - take next available index
+          optIdx = currentQ.options!.length;
+        }
+
         // Prioritize option if it strictly follows the sequence or it's the expected next option
         if (optIdx === currentQ.options!.length) {
           matchedAsOption = true;
-          isAsterisk = !!oMatch[1];
+          isAsterisk = oMatch ? !!oMatch[1] : false;
         }
       }
 
       if (matchedAsOption) {
         // Clean HTML from hints but keep structures
-        currentQ.options![optIdx] = stripHintTags(htmlContent.replace(optionRegex, "$3"));
+        // We use stripHintTags directly because it now handles the custom markers
+        currentQ.options![optIdx] = stripHintTags(htmlContent);
         isExplaining = false;
 
-        if (hasMark || isAsterisk) currentQ.correct_answer = optIdx;
+        if (hasCorrectHint || isAsterisk || xmlCorrectAnswer === optIdx) currentQ.correct_answer = optIdx;
       } else if (isBareAsterisk && currentQ.content && currentQ.options!.length < 4) {
         // Bare * line — clean it up
         const optContent = stripHintTags(htmlContent.replace(/^\*\s*/, ""));
@@ -271,7 +377,7 @@ export function ImportDocxView() {
           currentQ.options.length <= 4
         ) {
           currentQ.options[currentQ.options.length - 1] += "<br/>" + htmlContent;
-          if (hasMark) currentQ.correct_answer = currentQ.options.length - 1;
+          if (hasCorrectHint) currentQ.correct_answer = currentQ.options.length - 1;
         } else if (currentQ.content) {
           currentQ.content += "<br/>" + htmlContent;
         } else {
@@ -286,18 +392,23 @@ export function ImportDocxView() {
   };
 
   const finalizeQuestion = (q: Partial<ParsedQuestion>): ParsedQuestion => {
+    const normalizedOptions = (q.options || []).filter(
+      (option): option is string => typeof option === "string" && option.trim().length > 0,
+    );
+
     let error;
     if (!q.content) error = "Thiếu nội dung câu hỏi";
-    else if (!q.options || q.options.length !== 4) error = "Cần chính xác 4 lựa chọn (A, B, C, D)";
+    else if (normalizedOptions.length !== 4) error = "Cần chính xác 4 lựa chọn (A, B, C, D)";
     else if (q.correct_answer === undefined || q.correct_answer < 0 || q.correct_answer > 3)
-      error = "Thiếu hoặc sai đáp án đúng (Đảm bảo đã bôi màu đáp án trong file DOCX)";
+      error =
+        "Thiếu hoặc sai đáp án đúng (Đảm bảo marker [<$>] của đáp án đúng được tô màu trong file DOCX)";
 
     return {
       content: q.content || "",
       options:
-        q.options && q.options.length === 4
-          ? q.options
-          : Array.from({ length: 4 }, (_, i) => q.options?.[i] || ""),
+        normalizedOptions.length === 4
+          ? normalizedOptions
+          : Array.from({ length: 4 }, (_, i) => normalizedOptions[i] || ""),
       correct_answer:
         q.correct_answer !== undefined && q.correct_answer >= 0 ? q.correct_answer : 0,
       explanation: q.explanation || "",
@@ -432,17 +543,19 @@ export function ImportDocxView() {
             <h4 className="font-semibold text-foreground mb-2">Quy tắc định dạng được hỗ trợ:</h4>
             <ul className="list-disc pl-4 space-y-1">
               <li>
-                Câu hỏi bắt đầu bằng: <code className="text-primary">Câu 1:</code> hoặc{" "}
-                <code className="text-primary">1.</code>
+                Câu hỏi bắt đầu bằng: <code className="text-primary">Câu 1:</code>,{" "}
+                <code className="text-primary">1.</code>, hoặc{" "}
+                <code className="text-primary">Câu 1 [&lt;DE&gt;]:</code>
               </li>
               <li>
                 Lựa chọn bắt đầu bằng: <code className="text-primary">A.</code>,{" "}
-                <code className="text-primary">B)</code>, hoặc{" "}
-                <code className="text-primary">C/</code>
+                <code className="text-primary">B)</code>, hoặc marker{" "}
+                <code className="text-primary">[&lt;$&gt;]</code>
               </li>
               <li>
-                Đáp án đúng: Tô màu <strong>vàng</strong> hoặc <strong>xanh lá</strong> cho lựa chọn
-                đó, HOẶC viết <code className="text-primary">Đáp án: A</code>
+                Đáp án đúng: Tô màu <strong>đỏ</strong>, <strong>vàng</strong> hoặc{" "}
+                <strong>xanh lá</strong> cho lựa chọn đó, HOẶC dùng dấu{" "}
+                <code className="text-primary">*</code> ở đầu dòng.
               </li>
               <li>
                 Dòng giải thích: <code className="text-primary">Giải thích: ...</code>
@@ -499,6 +612,9 @@ export function ImportDocxView() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {q.options.map((opt, oIdx) => (
                             <div key={oIdx} className="flex items-start gap-2">
+                              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground">
+                                {String.fromCharCode(65 + oIdx)}
+                              </div>
                               <input
                                 type="radio"
                                 className="mt-2.5"
@@ -509,7 +625,7 @@ export function ImportDocxView() {
                               <textarea
                                 className={`w-full min-h-[40px] rounded-md border px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                                   q.correct_answer === oIdx
-                                    ? "bg-green-100 dark:bg-green-900/30 border-green-500/50"
+                                    ? "border-emerald-500/70 bg-emerald-50 text-slate-900 shadow-sm dark:border-emerald-400/60 dark:bg-emerald-950/45 dark:text-emerald-50"
                                     : "bg-transparent border-input"
                                 }`}
                                 value={opt}
