@@ -38,20 +38,24 @@ const MemoizedChart = memo(function MemoizedChart({ data }: { data: any[] }) {
 const PAGE_SIZE = 10;
 
 function ResultsPage() {
+  const { user } = useAuth();
   const [selectedExam, setSelectedExam] = useState<string>("all");
   const [viewingAttempt, setViewingAttempt] = useState<any>(null);
   const [page, setPage] = useState(0);
 
   const { data: exams, isLoading: examsLoading } = useQuery({
-    queryKey: ["exams-list"],
+    queryKey: ["exams-list", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("exams")
         .select("id, title")
+        .eq("created_by", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 

@@ -38,25 +38,36 @@ function ExamsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<any>(null);
 
+  const { user } = useAuth();
+
   const { data: subjects } = useQuery({
-    queryKey: ["subjects"],
+    queryKey: ["subjects", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("subjects").select("id, name").order("name");
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("teacher_id", user.id)
+        .order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
 
   const { data: exams, isLoading } = useQuery({
-    queryKey: ["exams"],
+    queryKey: ["exams", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("exams")
         .select("*, subjects(name)")
+        .eq("created_by", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
 
   useEffect(() => {

@@ -115,12 +115,18 @@ export function ImportDocxView() {
   const [fileName, setFileName] = useState("");
 
   const { data: subjects } = useQuery({
-    queryKey: ["subjects"],
+    queryKey: ["subjects", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("subjects").select("id, name").order("name");
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("teacher_id", user.id)
+        .order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
