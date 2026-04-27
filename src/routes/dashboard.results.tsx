@@ -14,6 +14,51 @@ import { AttemptDetailDialog } from "@/components/dashboard/results/AttemptDetai
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+
+// #region agent log
+if (import.meta.env.DEV) {
+  console.warn("[agent log]", {
+    sessionId: "6e5d58",
+    runId: "pre-fix",
+    hypothesisId: "BOOT",
+    location: "src/routes/dashboard.results.tsx:module",
+    message: "module loaded",
+  });
+  fetch("/__agent_log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: "6e5d58",
+      runId: "pre-fix",
+      hypothesisId: "BOOT",
+      location: "src/routes/dashboard.results.tsx:module",
+      message: "module loaded",
+      data: {},
+      timestamp: Date.now(),
+    }),
+  })
+    .then(() => {
+      console.warn("[agent log]", {
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "BOOT",
+        location: "src/routes/dashboard.results.tsx:module",
+        message: "POST ok",
+      });
+    })
+    .catch((e) => {
+      console.warn("[agent log]", {
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "BOOT",
+        location: "src/routes/dashboard.results.tsx:module",
+        message: "POST failed",
+        error: String(e),
+      });
+    });
+}
+// #endregion agent log
 
 export const Route = createFileRoute("/dashboard/results")({
   head: () => ({ meta: [{ title: "Kết quả — QuizHub" }] }),
@@ -40,8 +85,56 @@ const PAGE_SIZE = 10;
 function ResultsPage() {
   const { user } = useAuth();
   const [selectedExam, setSelectedExam] = useState<string>("all");
+  const [searchName, setSearchName] = useState("");
   const [viewingAttempt, setViewingAttempt] = useState<any>(null);
   const [page, setPage] = useState(0);
+
+  // #region agent log
+  if (import.meta.env.DEV) {
+    console.warn("[agent log]", {
+      sessionId: "6e5d58",
+      runId: "pre-fix",
+      hypothesisId: "H1",
+      location: "src/routes/dashboard.results.tsx:ResultsPage",
+      message: "Render state snapshot",
+      hasUser: !!user,
+      selectedExam,
+      page,
+    });
+    fetch("/__agent_log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "H1",
+        location: "src/routes/dashboard.results.tsx:ResultsPage",
+        message: "Render state snapshot",
+        data: { hasUser: !!user, selectedExam, page },
+        timestamp: Date.now(),
+      }),
+    })
+      .then(() => {
+        console.warn("[agent log]", {
+          sessionId: "6e5d58",
+          runId: "pre-fix",
+          hypothesisId: "H1",
+          location: "src/routes/dashboard.results.tsx:ResultsPage",
+          message: "POST ok",
+        });
+      })
+      .catch((e) => {
+        console.warn("[agent log]", {
+          sessionId: "6e5d58",
+          runId: "pre-fix",
+          hypothesisId: "H1",
+          location: "src/routes/dashboard.results.tsx:ResultsPage",
+          message: "POST failed",
+          error: String(e),
+        });
+      });
+  }
+  // #endregion agent log
 
   const { data: exams, isLoading: examsLoading } = useQuery({
     queryKey: ["exams-list", user?.id],
@@ -66,8 +159,56 @@ function ResultsPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["attempts", selectedExam, page],
+    queryKey: ["attempts", selectedExam, searchName, page],
     queryFn: async () => {
+      // #region agent log
+      if (import.meta.env.DEV) {
+        console.warn("[agent log]", {
+          sessionId: "6e5d58",
+          runId: "pre-fix",
+          hypothesisId: "H2",
+          location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+          message: "attempts query start",
+          hasUser: !!user,
+          selectedExam,
+          page,
+          pageSize: PAGE_SIZE,
+        });
+        fetch("/__agent_log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: "6e5d58",
+            runId: "pre-fix",
+            hypothesisId: "H2",
+            location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+            message: "attempts query start",
+            data: { hasUser: !!user, selectedExam, page, pageSize: PAGE_SIZE },
+            timestamp: Date.now(),
+          }),
+        })
+          .then(() => {
+            console.warn("[agent log]", {
+              sessionId: "6e5d58",
+              runId: "pre-fix",
+              hypothesisId: "H2",
+              location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+              message: "POST ok",
+            });
+          })
+          .catch((e) => {
+            console.warn("[agent log]", {
+              sessionId: "6e5d58",
+              runId: "pre-fix",
+              hypothesisId: "H2",
+              location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+              message: "POST failed",
+              error: String(e),
+            });
+          });
+      }
+      // #endregion agent log
+
       let query = supabase
         .from("exam_attempts")
         .select("*, exams(title)", { count: "exact" })
@@ -75,11 +216,73 @@ function ResultsPage() {
 
       if (selectedExam !== "all") {
         query = query.eq("exam_id", selectedExam);
+      } else if (exams && exams.length > 0) {
+        // Filter by all exams belonging to this teacher
+        query = query.in("exam_id", exams.map(e => e.id));
+      } else if (exams && exams.length === 0) {
+        // No exams means no results
+        return { attempts: [], totalCount: 0 };
+      }
+
+      if (searchName.trim()) {
+        query = query.ilike("student_name", `%${searchName.trim()}%`);
       }
 
       const { data, error, count } = await query
         .order("submitted_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      // #region agent log
+      if (import.meta.env.DEV) {
+        console.warn("[agent log]", {
+          sessionId: "6e5d58",
+          runId: "pre-fix",
+          hypothesisId: "H3",
+          location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+          message: "attempts query result",
+          hasError: !!error,
+          count,
+          returned: Array.isArray(data) ? data.length : null,
+        });
+        fetch("/__agent_log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: "6e5d58",
+            runId: "pre-fix",
+            hypothesisId: "H3",
+            location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+            message: "attempts query result",
+            data: {
+              hasError: !!error,
+              count,
+              returned: Array.isArray(data) ? data.length : null,
+              sampleKeys: Array.isArray(data) && data[0] ? Object.keys(data[0]).slice(0, 12) : null,
+            },
+            timestamp: Date.now(),
+          }),
+        })
+          .then(() => {
+            console.warn("[agent log]", {
+              sessionId: "6e5d58",
+              runId: "pre-fix",
+              hypothesisId: "H3",
+              location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+              message: "POST ok",
+            });
+          })
+          .catch((e) => {
+            console.warn("[agent log]", {
+              sessionId: "6e5d58",
+              runId: "pre-fix",
+              hypothesisId: "H3",
+              location: "src/routes/dashboard.results.tsx:attemptsQueryFn",
+              message: "POST failed",
+              error: String(e),
+            });
+          });
+      }
+      // #endregion agent log
 
       if (error) throw error;
       return { attempts: data, totalCount: count || 0 };
@@ -87,13 +290,43 @@ function ResultsPage() {
     staleTime: 60 * 1000,
   });
 
+  // Separate query for accurate stats across ALL pages
+  const { data: allScores } = useQuery({
+    queryKey: ["attempts-stats", selectedExam, searchName],
+    queryFn: async () => {
+      if (!user) return [];
+      let query = supabase
+        .from("exam_attempts")
+        .select("score")
+        .eq("is_finished", true);
+
+      if (selectedExam !== "all") {
+        query = query.eq("exam_id", selectedExam);
+      } else if (exams && exams.length > 0) {
+        query = query.in("exam_id", exams.map(e => e.id));
+      } else if (exams && exams.length === 0) {
+        return [];
+      }
+
+      if (searchName.trim()) {
+        query = query.ilike("student_name", `%${searchName.trim()}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data.map((d) => d.score || 0);
+    },
+    enabled: !!user && !!exams,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const attempts = resultsData?.attempts;
   const totalCount = resultsData?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const calculateStats = () => {
-    if (!attempts || attempts.length === 0) return null;
-    const scores = attempts.map((a) => a.score || 0);
+    if (!allScores || allScores.length === 0) return null;
+    const scores = allScores;
     const avgScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
     const passCount = scores.filter((s) => s >= 5).length;
     const passRate = ((passCount / scores.length) * 100).toFixed(0);
@@ -119,25 +352,40 @@ function ResultsPage() {
             Theo dõi kết quả của học sinh và thống kê bài thi.
           </p>
         </div>
-        <Select
-          value={selectedExam}
-          onValueChange={(val) => {
-            setSelectedExam(val);
-            setPage(0);
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-[250px]">
-            <SelectValue placeholder="Chọn một bài thi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả bài thi</SelectItem>
-            {exams?.map((e) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative w-full sm:w-[250px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Tìm tên học sinh..."
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={searchName}
+              onChange={(e) => {
+                setSearchName(e.target.value);
+                setPage(0);
+              }}
+            />
+          </div>
+          <Select
+            value={selectedExam}
+            onValueChange={(val) => {
+              setSelectedExam(val);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectValue placeholder="Chọn một bài thi" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả bài thi</SelectItem>
+              {exams?.map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error ? (
@@ -195,13 +443,16 @@ function ResultsPage() {
           </div>
 
           {/* Responsive list/table for attempts */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className={`rounded-md border bg-card overflow-hidden transition-opacity ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
             <div className="md:hidden divide-y">
               {attempts?.map((a) => {
-                const timeSpentStr =
-                  a.started_at && a.submitted_at
-                    ? `${Math.floor((new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000)}m`
-                    : "-";
+                const diffMs = a.started_at && a.submitted_at 
+                  ? new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()
+                  : 0;
+                const m = Math.floor(diffMs / 60000);
+                const s = Math.floor((diffMs % 60000) / 1000);
+                const timeSpentStr = m > 0 ? `${m}ph ${s}s` : `${s}s`;
+                
                 return (
                   <div
                     key={a.id}
@@ -238,10 +489,13 @@ function ResultsPage() {
               </thead>
               <tbody>
                 {attempts?.map((a) => {
-                  const timeSpentStr =
-                    a.started_at && a.submitted_at
-                      ? `${Math.floor((new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000)}m`
-                      : "-";
+                  const diffMs = a.started_at && a.submitted_at 
+                    ? new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()
+                    : 0;
+                  const m = Math.floor(diffMs / 60000);
+                  const s = Math.floor((diffMs % 60000) / 1000);
+                  const timeSpentStr = m > 0 ? `${m}ph ${s}s` : `${s}s`;
+
                   return (
                     <tr
                       key={a.id}
@@ -255,7 +509,7 @@ function ResultsPage() {
                       <td className="p-4 text-center font-bold text-primary">
                         {a.score?.toFixed(1) || 0}
                       </td>
-                      <td className="p-4 text-center">{timeSpentStr} ph</td>
+                      <td className="p-4 text-center">{timeSpentStr}</td>
                       <td className="p-4 text-right text-muted-foreground">
                         {a.submitted_at ? new Date(a.submitted_at).toLocaleString("vi-VN") : "-"}
                       </td>

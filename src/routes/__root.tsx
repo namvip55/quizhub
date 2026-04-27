@@ -6,6 +6,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 
@@ -79,8 +80,39 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  // #region agent log
+  useEffect(() => {
+    console.warn("[agent log]", {
+      sessionId: "6e5d58",
+      runId: "pre-fix",
+      hypothesisId: "ROOT",
+      location: "src/routes/__root.tsx:RootComponent",
+      message: "RootComponent mounted",
+    });
+
+    fetch("/__agent_log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "ROOT",
+        location: "src/routes/__root.tsx:RootComponent",
+        message: "RootComponent mounted",
+        data: {},
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, []);
+  // #endregion agent log
+
   return (
     <AuthProvider>
+      {import.meta.env.DEV && (
+        <div className="fixed left-2 top-2 z-[9999] rounded bg-black/70 px-2 py-1 text-xs text-white">
+          agent-log active (6e5d58)
+        </div>
+      )}
       <Outlet />
       <Toaster richColors closeButton position="top-right" theme="dark" />
     </AuthProvider>

@@ -14,6 +14,51 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ExamFormDialog } from "@/components/dashboard/exams/ExamFormDialog";
+import { useAuth } from "@/lib/auth";
+
+// #region agent log
+if (import.meta.env.DEV) {
+  console.warn("[agent log]", {
+    sessionId: "6e5d58",
+    runId: "pre-fix",
+    hypothesisId: "BOOT",
+    location: "src/routes/dashboard.exams.tsx:module",
+    message: "module loaded",
+  });
+  fetch("/__agent_log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: "6e5d58",
+      runId: "pre-fix",
+      hypothesisId: "BOOT",
+      location: "src/routes/dashboard.exams.tsx:module",
+      message: "module loaded",
+      data: {},
+      timestamp: Date.now(),
+    }),
+  })
+    .then(() => {
+      console.warn("[agent log]", {
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "BOOT",
+        location: "src/routes/dashboard.exams.tsx:module",
+        message: "POST ok",
+      });
+    })
+    .catch((e) => {
+      console.warn("[agent log]", {
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "BOOT",
+        location: "src/routes/dashboard.exams.tsx:module",
+        message: "POST failed",
+        error: String(e),
+      });
+    });
+}
+// #endregion agent log
 
 type ExamsSearch = {
   edit?: string;
@@ -69,6 +114,60 @@ function ExamsPage() {
     },
     enabled: !!user,
   });
+
+  useEffect(() => {
+    if (!exams) return;
+    const total = exams.length;
+    const titleNonString = exams.filter((e) => typeof e?.title !== "string").length;
+    const codeNonString = exams.filter((e) => typeof e?.exam_code !== "string").length;
+
+    // #region agent log
+    if (import.meta.env.DEV) {
+      console.warn("[agent log]", {
+        sessionId: "6e5d58",
+        runId: "pre-fix",
+        hypothesisId: "H4",
+        location: "src/routes/dashboard.exams.tsx:useEffect(exams)",
+        message: "exams data shape summary",
+        total,
+        titleNonString,
+        codeNonString,
+      });
+      fetch("/__agent_log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "6e5d58",
+          runId: "pre-fix",
+          hypothesisId: "H4",
+          location: "src/routes/dashboard.exams.tsx:useEffect(exams)",
+          message: "exams data shape summary",
+          data: { total, titleNonString, codeNonString },
+          timestamp: Date.now(),
+        }),
+      })
+        .then(() => {
+          console.warn("[agent log]", {
+            sessionId: "6e5d58",
+            runId: "pre-fix",
+            hypothesisId: "H4",
+            location: "src/routes/dashboard.exams.tsx:useEffect(exams)",
+            message: "POST ok",
+          });
+        })
+        .catch((e) => {
+          console.warn("[agent log]", {
+            sessionId: "6e5d58",
+            runId: "pre-fix",
+            hypothesisId: "H4",
+            location: "src/routes/dashboard.exams.tsx:useEffect(exams)",
+            message: "POST failed",
+            error: String(e),
+          });
+        });
+    }
+    // #endregion agent log
+  }, [exams]);
 
   useEffect(() => {
     if (editExamId && exams) {
@@ -156,9 +255,13 @@ function ExamsPage() {
         <div className="flex h-32 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
         </div>
+      ) : exams?.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-12 text-center text-sm text-muted-foreground">
+          Chưa có đề thi nào. Nhấn "Import DOCX" để bắt đầu.
+        </div>
       ) : filteredExams?.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-12 text-center text-sm text-muted-foreground">
-          Chưa có đề thi nào. Nhấn "Đề thi mới" để tạo.
+          Không tìm thấy đề thi nào phù hợp với từ khóa của bạn.
         </div>
       ) : (
         <div className="rounded-md border">
@@ -194,12 +297,15 @@ function ExamsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={publishMutation.isPending}
                         onClick={() =>
                           publishMutation.mutate({ id: e.id, published: !e.published })
                         }
                         title={e.published ? "Gỡ xuất bản" : "Xuất bản"}
                       >
-                        {e.published ? (
+                        {publishMutation.isPending && publishMutation.variables?.id === e.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : e.published ? (
                           <PowerOff className="h-4 w-4" />
                         ) : (
                           <Power className="h-4 w-4" />
@@ -221,11 +327,16 @@ function ExamsPage() {
                         size="icon"
                         className="text-destructive hover:text-destructive"
                         title="Xóa"
+                        disabled={deleteMutation.isPending}
                         onClick={() => {
                           if (confirm("Đồng ý xóa đề thi này?")) deleteMutation.mutate(e.id);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deleteMutation.isPending && deleteMutation.variables === e.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </td>
