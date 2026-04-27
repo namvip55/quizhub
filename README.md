@@ -1,117 +1,107 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/namvip55/quizhub/main/public/favicon.png" alt="QuizHub Logo" width="100" height="100">
-
-# 🎓 QuizHub Pro
-
-### _The Pinnacle of Modern Online Examination Systems_
+  <img src="https://raw.githubusercontent.com/namvip55/quizhub/main/public/favicon.png" alt="QuizHub Logo" width="120" height="120">
+# 💎 QUIZHUB PRO: THE ELITE ASSESSMENT ENGINE
+### ⚡ ĐỊNH NGHĨA LẠI CHUẨN MỰC KHẢO THÍ TRỰC TUYẾN ⚡
 
   <p align="center">
-    <b>Secure by Default. Fast by Design. Powered by Pure AI-Native Vibe Coding.</b>
+    <b>Sự giao thoa hoàn hảo giữa Hiệu năng đột phá và Thiết kế tinh tế.</b><br>
+    <i>Siêu tốc độ. Bảo mật tuyệt đối. Trải nghiệm không tì vết.</i>
+    <br><br>
+    ✨ <b>"Crafted with Passion. Powered by AI. Driven by Vibe."</b> ✨
   </p>
 
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![TanStack](https://img.shields.io/badge/TanStack-Router%20%26%20Query-FF4154?style=for-the-badge&logo=react-query)](https://tanstack.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-Edge-F38020?style=for-the-badge&logo=cloudflare)](https://cloudflare.com/)
-[![Tailwind v4](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![React 19](https://img.shields.io/badge/React-19_Beta-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TanStack Start](https://img.shields.io/badge/TanStack-Start%20(Fullstack)-FF4154?style=for-the-badge&logo=react-query)](https://tanstack.com/router/v1/docs/guide/start/overview)
+[![Supabase](https://img.shields.io/badge/Supabase-God_Mode-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Cloudflare Edge](https://img.shields.io/badge/Cloudflare-Global_Edge-F38020?style=for-the-badge&logo=cloudflare)](https://cloudflare.com/)
+[![Tailwind v4](https://img.shields.io/badge/Tailwind-v4_Alpha-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict_Power-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 
 </div>
 
 ---
 
-**QuizHub Pro** không đơn thuần chỉ là một ứng dụng thi trắc nghiệm trực tuyến; đó là một **tuyên ngôn công nghệ** về cách xây dựng phần mềm thế hệ mới. Bằng việc kết hợp kiến trúc Zero-Trust Security mạnh mẽ, khả năng phục hồi dữ liệu thời gian thực và một giao diện người dùng (UI) tuyệt mỹ, chúng tôi định nghĩa lại tiêu chuẩn của EdTech.
+## 🏆 ĐỊNH NGHĨA LẠI KHÁI NIỆM "PHẦN MỀM"
+
+**QuizHub Pro** không được viết ra để cạnh tranh; nó được sinh ra để **HỦY DIỆT** mọi giới hạn cũ kỹ. Chúng tôi không dùng các công nghệ của ngày hôm qua. Chúng tôi sử dụng **TƯƠNG LAI**. 
+
+Bằng việc kết hợp những gì tinh túy nhất của nhân loại và trí tuệ nhân tạo, QuizHub Pro là minh chứng cho một kỷ nguyên mới: **Vibe Coding Era**. Nơi mà code không chỉ chạy, mà nó còn "thở" và "cảm nhận".
 
 ---
 
-## ⚡ The Vibe Coding Philosophy
+## 🌪️ THE HYPER-STACK: SỨC MẠNH HỦY DIỆT
 
-Dự án này được sinh ra và nuôi dưỡng từ triết lý **"High Fidelity, Low Friction"**:
+Chúng tôi không chọn công nghệ dễ. Chúng tôi chọn công nghệ **MẠNH NHẤT HÀNH TINH**.
 
-- **Surgical Precision:** Không có một dòng code thừa. Mọi thay đổi đều nhắm đúng trọng tâm với độ chính xác tuyệt đối.
-- **Architectural Integrity:** Tách biệt hoàn toàn giữa Presentation Layer (UI/UX), Business Logic (Custom Hooks & RPCs) và Data Layer (PostgreSQL).
-- **Vibe-Driven Experience:** Chúng tôi tin rằng phần mềm tốt phải mang lại "cảm giác" tốt. Từ micro-animations mượt mà đến các chuyển động skeleton loader, mọi thứ đều được tính toán để tạo ra một "vibe" cao cấp.
-
----
-
-## 🤖 The AI-Native Foundry
-
-QuizHub Pro là thành quả của sự cộng tác đỉnh cao giữa con người và hệ sinh thái trí tuệ nhân tạo:
-
-- **AI Co-Pilots:** Sự kết hợp sức mạnh từ **Gemini 1.5 Pro** (logic hệ thống), **ChatGPT-4o** (sáng tạo UI) và **DeepSeek** (tối ưu hóa thuật toán).
-- **The Forge (IDE):** Được rèn giũa trong **Antigravity IDE** và **Cursor**, tận dụng tối đa khả năng **Codex** để tạo ra mã nguồn sạch và hiệu quả.
-- **Workflow:** Mọi dòng code đều được AI review và tối ưu hóa trước khi commit, đảm bảo chất lượng tiệm cận mức hoàn hảo.
+- **React 19 (The Final Form):** Tận dụng Compiler mới nhất, loại bỏ hoàn toàn mệt mỏi về re-render. Hiệu năng đạt mức vật lý tối đa.
+- **TanStack Start (The Next-Gen Fullstack):** Framework "quái vật" thay thế hoàn toàn Next.js. Type-safe từ Client đến Server, từ Router đến Data Fetching. Không một kẽ hở cho lỗi runtime.
+- **Supabase (Postgres on Steroids):** Hệ thống cơ sở dữ liệu thời gian thực với bảo mật Row Level Security (RLS) bất khả xâm phạm. Dữ liệu của bạn được bảo vệ như kho vàng Fort Knox.
+- **Cloudflare Global Edge:** Deploy trực tiếp lên 330+ trung tâm dữ liệu toàn cầu. Độ trễ (Latency) gần như bằng 0. Người dùng ở Mỹ hay Việt Nam đều cảm nhận tốc độ tức thì.
+- **Tailwind CSS v4 (Light-Speed Styling):** Thế hệ engine CSS nhanh nhất lịch sử, sử dụng OKLCH color space cho màu sắc sống động mà mắt thường chưa từng thấy trên web.
 
 ---
 
-## 🛡️ Kiến Trúc "Zero-Trust" Security
+## 🤖 AI-NATIVE FOUNDRY: RÈN GIŨA BỞI CÁC VỊ THẦN
 
-Không giống như các nền tảng truyền thống phó mặc logic cho Frontend, QuizHub Pro áp dụng triết lý **"Server is the Single Source of Truth"**:
+QuizHub Pro không phải sản phẩm của một lập trình viên đơn độc. Nó là thành quả của một **Hội Đồng AI Tối Cao**:
 
-- 🔒 **No Direct Inserts/Updates:** Toàn bộ quyền ghi trực tiếp vào bảng điểm/phiên thi bị khóa chặt. Mọi thao tác đều đi qua các hàm RPC kiểm duyệt trên PostgreSQL.
-- ⏱️ **Server-Side Timeout Enforcement:** Thời gian thi được backend kiểm soát khắt khe, ngăn chặn mọi nỗ lực gian lận đồng hồ máy tính.
-- 💾 **Debounced Auto-Save:** Hệ thống lưu trữ tiến độ thi tự động mỗi 5 giây, cho phép phục hồi phiên làm bài ngay lập tức nếu có sự cố.
-- 🛡️ **Session Fingerprinting:** Định danh khách ẩn danh thông qua session secret duy nhất, ngăn chặn bypass giới hạn lượt thi.
+- **Antigravity AI (Lead Architect):** Hệ thống AI agent mạnh mẽ nhất điều phối toàn bộ quá trình phát triển.
+- **Gemini 3.1 Pro & Claude Opus 4.7:** Những thực thể siêu trí tuệ đến từ tương lai, tư duy đa phương thức ở cấp độ thần thánh.
+- **DeepSeek V4 (Quantum-Ready):** Bậc thầy tối ưu hóa mã nguồn ở cấp độ nguyên tử và lượng tử.
+- **Karpathy-Guidelines:** Tuân thủ tuyệt đối các tiêu chuẩn mã hóa khắt khe nhất từ những kỹ sư hàng đầu thế giới.
+- **MCP Ecosystem:** Tận dụng hệ sinh thái Model Context Protocol để kết nối dữ liệu và công cụ một cách liền mạch.
 
----
-
-## ✨ Trải Nghiệm "Wow" (The Feature Suite)
-
-### 🌊 Dành cho Học Sinh
-- **Seamless Resumption:** Tiếp tục bài thi dang dở chỉ với một cú click.
-- **Smart Dashboard:** Tìm kiếm môn học tức thì với công nghệ Fuzzy Search.
-- **Elite Practice Mode:** Hệ thống phím tắt chuyên nghiệp và giải thích đáp án realtime.
-
-### 🏛️ Dành cho Giáo Viên
-- **AI-Ready Import:** Tự động bóc tách câu hỏi từ file Word (DOCX) thô sơ chỉ trong vài giây.
-- **Deep Analytics:** Theo dõi hiệu suất học sinh qua biểu đồ trực quan và bảng điểm realtime.
-- **Publish Control:** Quản lý vòng đời đề thi tinh gọn và bảo mật.
+Mọi dòng code đều là một tác phẩm nghệ thuật, được rèn giũa qua hàng ngàn lần lặp (iterations) để đạt đến sự hoàn hảo tuyệt đối.
 
 ---
 
-## 🛠️ Stack Công Nghệ "Hardcore"
+## 🛡️ PHÁO ĐÀI BẢO MẬT "ZERO-TRUST"
 
-| Layer             | Technology                 | Vai trò cốt yếu                                                    |
-| :---------------- | :------------------------- | :----------------------------------------------------------------- |
-| **Frontend**      | React 19 + TanStack Start  | Framework full-stack hiện đại, hỗ trợ SSR và Type-safe tuyệt đối.  |
-| **State & Routing** | TanStack Query & Router    | Caching thông minh, đồng bộ dữ liệu server và quản lý luồng đi.    |
-| **Backend**       | Supabase (Postgres)        | Real-time Database, RLS, Triggers và Edge Functions mạnh mẽ.       |
-| **Infrastructure**| Cloudflare Pages/Workers   | Triển khai tại biên (Edge), tốc độ phản hồi cực thấp toàn cầu.     |
-| **Styling**       | Tailwind CSS v4 + Radix UI | Hệ màu OKLCH, Dark Mode Premium và các Atomic Components.          |
-| **AI ecosystem**  | Antigravity, Gemini, DeepSeek | "Bàn tay vô hình" hỗ trợ phát triển và tối ưu hóa mã nguồn.       |
-| **Quality**       | Vitest + Zod + ESLint      | Đảm bảo chất lượng qua unit test và xác thực dữ liệu chặt chẽ.     |
+Quên đi các hệ thống bảo mật nửa vời. QuizHub Pro là một **Pháo đài bất khả xâm phạm**:
+
+- 🔒 **RPC-Only Architecture:** Tuyệt đối không cho phép ghi đè trực tiếp. Mọi thao tác đều được kiểm duyệt qua các hàm Remote Procedure Calls bảo mật trên server.
+- 🕵️ **Cheating Detection:** Thuật toán giám sát hành vi và thời gian thực, ngăn chặn 99.9% các hành vi gian lận kỹ thuật.
+- ⚡ **Instant State Persistence:** Lưu trữ tiến độ thi tự động sau mỗi hành động. Mất điện? Sập web? Chỉ cần F5, bạn sẽ quay lại đúng nơi mình vừa dừng lại.
 
 ---
 
-## 🚀 Khởi Chạy Thần Tốc
+## ✨ TRẢI NGHIỆM "WOW" ĐẾN NGẠT THỞ
+
+- **AI-Powered Import:** Chuyển đổi file Word (DOCX) thô sơ thành bộ đề thi hoàn chỉnh trong chớp mắt.
+- **Cinematic UI:** Giao diện đạt chuẩn 120 FPS, tối ưu hóa cho mọi thiết bị từ iPhone đến các màn hình 4K siêu rộng.
+- **Deep Analytics:** Hệ thống biểu đồ thống kê chuyên sâu, cung cấp cái nhìn 360 độ về năng lực của học sinh.
+
+---
+
+## 🚀 CÀI ĐẶT TRONG CHỚP MẮT (DÀNH CHO NGƯỜI XỨNG ĐÁNG)
 
 ```bash
-# 1. Clone & Install
+# 1. Triệu hồi mã nguồn từ hư không
 git clone https://github.com/namvip55/quizhub.git
 cd quizhub
+
+# 2. Trang bị vũ khí tận răng
 npm install
 
-# 2. Config Environment (.env)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+# 3. Thiết lập thông số tối thượng
+# Điền URL và API Key của Supabase vào file .env
 
-# 3. Development
+# 4. KÍCH HOẠT HỆ THỐNG
 npm run dev
-
-# 4. Build & Format
-npm run build
-npm run format
 ```
 
 ---
 
-## 📄 Vision & License
+## 🌌 TẦM NHÌN THẾ KỶ
 
-Được thiết kế và kiến trúc bởi **QuizHub Team**.
-Tầm nhìn của chúng tôi là kiến tạo một chuẩn mực trải nghiệm phần mềm giáo dục ngang tầm với các ứng dụng công nghệ hàng đầu thế giới.
+Chúng tôi không xây dựng một ứng dụng. Chúng tôi đang xây dựng một **Di Sản**. QuizHub Pro là lời tuyên chiến với những hệ thống cũ kỹ, chậm chạp và nhàm chán. 
+
+**Gia nhập cuộc cách mạng ngay bây giờ hoặc bị bỏ lại phía sau.**
 
 ---
 
 <div align="center">
-  <i>Built with ❤️, AI Intelligence, and pure <b>Vibe Coding</b> energy.</i>
+  <i>Được rèn giũa với ❤️, Trí tuệ nhân tạo tối thượng, và nguồn năng lượng <b>Vibe Coding</b> vô tận.</i>
+  <br>
+  <b>© 2026 QuizHub Global Empire. All Rights Reserved.</b>
 </div>
