@@ -57,7 +57,7 @@ function AboutPage() {
                 </div>
               </a>
               <a 
-                href="https://github.com/namvip55/" 
+                href="https://github.com/namvip55/quizhub" 
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 hover:bg-primary/10 transition-colors border border-border/40 group"
@@ -67,7 +67,7 @@ function AboutPage() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">GitHub</div>
-                  <div className="text-sm font-medium">github.com/namvip55</div>
+                  <div className="text-sm font-medium">github.com/namvip55/quizhub</div>
                 </div>
               </a>
             </div>
@@ -92,7 +92,7 @@ function AboutPage() {
               <div className="text-center sm:text-left">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Ngân hàng BIDV</div>
                 <div className="text-2xl font-mono font-bold text-primary tracking-wider">8833519981</div>
-                <div className="text-sm font-medium opacity-80 mt-1">Năm đẹp trai</div>
+                <div className="text-sm font-medium opacity-80 mt-1">Nam vibe</div>
               </div>
             </div>
           </section>
