@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/namvip55/quizhub/main/public/favicon.ico" alt="QuizHub Logo" width="100" height="100">
+  <img src="https://raw.githubusercontent.com/namvip55/quizhub/main/public/favicon.png" alt="QuizHub Logo" width="100" height="100">
 
 # 🎓 QuizHub Pro
 
