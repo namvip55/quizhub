@@ -100,6 +100,14 @@ function PracticeModeView() {
     handleSelectAnswer,
   ]);
 
+  useEffect(() => {
+    if (hasAnsweredCurrent) {
+      setTimeout(() => {
+        document.getElementById("feedback-block")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 50);
+    }
+  }, [hasAnsweredCurrent, currentIndex]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -259,6 +267,7 @@ function PracticeModeView() {
           {/* Feedback Section */}
           {hasAnsweredCurrent && (
             <div
+              id="feedback-block"
               className={`p-6 sm:p-8 border-t animate-in slide-in-from-top-2 duration-300 ${isCurrentCorrect ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}
             >
               <h4
@@ -267,11 +276,24 @@ function PracticeModeView() {
                 {isCurrentCorrect ? "🎉 Chính xác!" : "Sai rồi!"}
               </h4>
               {currentQuestion.explanation && (
-                <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap p-4 bg-background/50 rounded-lg border">
+                <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap p-4 bg-background/50 rounded-lg border max-h-[35vh] overflow-y-auto">
                   <span className="font-semibold text-foreground block mb-1">Giải thích:</span>
                   <div dangerouslySetInnerHTML={{ __html: currentQuestion.explanation }} />
                 </div>
               )}
+              
+              {/* Mobile CTA inside feedback panel */}
+              <div className="mt-6 flex justify-end sm:hidden">
+                <Button size="lg" onClick={handleNext} className="w-full">
+                  {currentIndex < questions.length - 1 ? (
+                    <>
+                      Câu tiếp <ChevronRight className="ml-2 h-5 w-5" />
+                    </>
+                  ) : (
+                    "Hoàn thành"
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -279,11 +301,11 @@ function PracticeModeView() {
         {/* Navigation */}
         <div className="mt-8 flex items-center justify-between">
           <Button variant="outline" size="lg" onClick={handlePrev} disabled={currentIndex === 0}>
-            <ChevronLeft className="mr-2 h-5 w-5" /> Câu trước
+            <ChevronLeft className="mr-2 h-5 w-5" /> <span className="hidden sm:inline">Câu trước</span>
           </Button>
 
           {hasAnsweredCurrent ? (
-            <Button size="lg" onClick={handleNext}>
+            <Button size="lg" onClick={handleNext} className="hidden sm:flex">
               {currentIndex < questions.length - 1 ? (
                 <>
                   Câu tiếp <ChevronRight className="ml-2 h-5 w-5" />
@@ -293,7 +315,7 @@ function PracticeModeView() {
               )}
             </Button>
           ) : (
-            <Button size="lg" onClick={confirmAnswer} disabled={stagedAnswer === null}>
+            <Button size="lg" onClick={confirmAnswer} disabled={stagedAnswer === null} className="w-full sm:w-auto ml-4">
               Kiểm tra <ChevronRight className="ml-2 h-5 w-5" />
             </Button>
           )}
