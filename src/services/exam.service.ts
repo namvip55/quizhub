@@ -12,7 +12,10 @@ export const examService = {
       .eq("exam_code", code.toUpperCase())
       .single();
 
-    if (error) return null;
+    if (error) {
+      if (error.code === "PGRST116") return null; // Not found
+      throw error;
+    }
     return data;
   },
 

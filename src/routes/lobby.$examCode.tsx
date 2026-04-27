@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { Clock, FileText, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAnonSecret } from "@/lib/utils";
 
 export const Route = createFileRoute("/lobby/$examCode")({
   head: () => ({ meta: [{ title: "Phòng chờ thi — QuizHub" }] }),
@@ -46,13 +47,13 @@ function LobbyPage() {
       const isAnon = !user;
       let secret = null;
       if (isAnon) {
-        secret = localStorage.getItem("quizhub_anon_session_secret");
+        const secret = getAnonSecret();
         if (!secret) return null;
       }
       const { data, error } = await supabase
         .rpc("get_active_exam_attempt", {
           p_exam_id: exam!.id,
-          p_secret: secret,
+          p_secret: getAnonSecret(),
         })
         .maybeSingle();
 
@@ -70,7 +71,7 @@ function LobbyPage() {
       let anonSecret = null;
 
       if (isAnon) {
-        anonSecret = localStorage.getItem("quizhub_anon_session_secret");
+        anonSecret = getAnonSecret();
         if (!anonSecret) {
           anonSecret = crypto.randomUUID();
           localStorage.setItem("quizhub_anon_session_secret", anonSecret);
@@ -128,7 +129,7 @@ function LobbyPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight">{exam.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Vui lòng kiểm tra thông tin bín dưới trước khi bắt đầu.
+            Vui lòng kiểm tra thông tin bên dưới trước khi bắt đầu.
           </p>
         </div>
 

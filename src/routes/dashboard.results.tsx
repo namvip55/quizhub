@@ -35,9 +35,12 @@ const MemoizedChart = memo(function MemoizedChart({ data }: { data: any[] }) {
   );
 });
 
+const PAGE_SIZE = 10;
+
 function ResultsPage() {
   const [selectedExam, setSelectedExam] = useState<string>("all");
   const [viewingAttempt, setViewingAttempt] = useState<any>(null);
+  const [page, setPage] = useState(0);
 
   const { data: exams, isLoading: examsLoading } = useQuery({
     queryKey: ["exams-list"],
@@ -53,24 +56,36 @@ function ResultsPage() {
   });
 
   const {
-    data: attempts,
+    data: resultsData,
     isLoading: attemptsLoading,
     error,
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["attempts", selectedExam],
+    queryKey: ["attempts", selectedExam, page],
     queryFn: async () => {
-      let query = supabase.from("exam_attempts").select("*, exams(title)").eq("is_finished", true);
+      let query = supabase
+        .from("exam_attempts")
+        .select("*, exams(title)", { count: "exact" })
+        .eq("is_finished", true);
+
       if (selectedExam !== "all") {
         query = query.eq("exam_id", selectedExam);
       }
-      const { data, error } = await query.order("submitted_at", { ascending: false });
+
+      const { data, error, count } = await query
+        .order("submitted_at", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
       if (error) throw error;
-      return data;
+      return { attempts: data, totalCount: count || 0 };
     },
     staleTime: 60 * 1000,
   });
+
+  const attempts = resultsData?.attempts;
+  const totalCount = resultsData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const calculateStats = () => {
     if (!attempts || attempts.length === 0) return null;
@@ -100,7 +115,13 @@ function ResultsPage() {
             Theo dõi kết quả của học sinh và thống kê bài thi.
           </p>
         </div>
-        <Select value={selectedExam} onValueChange={setSelectedExam}>
+        <Select
+          value={selectedExam}
+          onValueChange={(val) => {
+            setSelectedExam(val);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-full sm:w-[250px]">
             <SelectValue placeholder="Chọn một bài thi" />
           </SelectTrigger>
@@ -240,6 +261,36 @@ function ResultsPage() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="text-sm text-muted-foreground">
+                Hiển thị {page * PAGE_SIZE + 1} - {Math.min((page + 1) * PAGE_SIZE, totalCount)} trong{" "}
+                {totalCount} kết quả
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  Trước
+                </Button>
+                <div className="text-sm font-medium">
+                  Trang {page + 1} / {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  Sau
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

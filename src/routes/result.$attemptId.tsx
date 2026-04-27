@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, ArrowLeft, Clock, AlertTriangle } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { sanitizeHtml } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { getAnonSecret } from "@/lib/utils";
 
 export const Route = createFileRoute("/result/$attemptId")({
   head: () => ({ meta: [{ title: "Kết quả thi — QuizHub" }] }),
@@ -32,7 +33,7 @@ function ResultPage() {
       const { data, error } = await supabase
         .rpc("get_exam_attempt", {
           attempt_id: attemptId,
-          secret: localStorage.getItem(`anon_secret_${attemptId}`) || null,
+          secret: getAnonSecret(attemptId),
         })
         .select("*, exams(title)")
         .single();
@@ -156,7 +157,7 @@ function ResultPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="prose prose-sm max-w-none dark:prose-invert font-medium">
                         <strong>Câu {index + 1}: </strong>
-                        <ReactMarkdown>{q.content}</ReactMarkdown>
+                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.content) }} />
                       </div>
                     </div>
 
@@ -197,7 +198,7 @@ function ResultPage() {
                     {q.explanation && (
                       <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-4 text-sm text-blue-800 dark:text-blue-300 mt-4">
                         <p className="font-semibold mb-1">Giải thích:</p>
-                        <ReactMarkdown>{q.explanation}</ReactMarkdown>
+                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.explanation) }} />
                       </div>
                     )}
                   </div>

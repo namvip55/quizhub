@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 import { examService } from "@/services/exam.service";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
 import { ASSETS } from "@/constants/assets";
-import { cleanQuizText } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/utils";
 
 const tingTingSound = ASSETS.SOUNDS.TING_TING;
 
@@ -214,7 +214,7 @@ function PracticeModeView() {
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden transition-all">
           <div className="p-6 sm:p-8">
             <h3 className="text-xl sm:text-2xl font-medium leading-relaxed whitespace-pre-wrap">
-              <div dangerouslySetInnerHTML={{ __html: cleanQuizText(currentQuestion.content) }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion.content) }} />
             </h3>
           </div>
 
@@ -255,7 +255,7 @@ function PracticeModeView() {
                   {icon}
                   <span className="text-base sm:text-lg">
                     <div
-                      dangerouslySetInnerHTML={{ __html: cleanQuizText(option) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(option) }}
                       className="inline-block"
                     />
                   </span>
@@ -278,47 +278,49 @@ function PracticeModeView() {
               {currentQuestion.explanation && (
                 <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap p-4 bg-background/50 rounded-lg border max-h-[35vh] overflow-y-auto">
                   <span className="font-semibold text-foreground block mb-1">Giải thích:</span>
-                  <div dangerouslySetInnerHTML={{ __html: currentQuestion.explanation }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion.explanation) }} />
                 </div>
               )}
               
-              {/* Mobile CTA inside feedback panel */}
-              <div className="mt-6 flex justify-end sm:hidden">
-                <Button size="lg" onClick={handleNext} className="w-full">
-                  {currentIndex < questions.length - 1 ? (
-                    <>
-                      Câu tiếp <ChevronRight className="ml-2 h-5 w-5" />
-                    </>
-                  ) : (
-                    "Hoàn thành"
-                  )}
-                </Button>
-              </div>
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between">
-          <Button variant="outline" size="lg" onClick={handlePrev} disabled={currentIndex === 0}>
-            <ChevronLeft className="mr-2 h-5 w-5" /> <span className="hidden sm:inline">Câu trước</span>
+        <div className="mt-8 flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="shrink-0 sm:px-6"
+          >
+            <ChevronLeft className="h-5 w-5 sm:mr-2" />
+            <span className="hidden sm:inline">Câu trước</span>
           </Button>
 
-          {hasAnsweredCurrent ? (
-            <Button size="lg" onClick={handleNext} className="hidden sm:flex">
-              {currentIndex < questions.length - 1 ? (
-                <>
-                  Câu tiếp <ChevronRight className="ml-2 h-5 w-5" />
-                </>
-              ) : (
-                "Hoàn thành"
-              )}
-            </Button>
-          ) : (
-            <Button size="lg" onClick={confirmAnswer} disabled={stagedAnswer === null} className="w-full sm:w-auto ml-4">
-              Kiểm tra <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          )}
+          <div className="flex-1">
+            {hasAnsweredCurrent ? (
+              <Button size="lg" onClick={handleNext} className="w-full">
+                {currentIndex < questions.length - 1 ? (
+                  <>
+                    Tiếp theo <ChevronRight className="ml-2 h-5 w-5" />
+                  </>
+                ) : (
+                  "Hoàn thành"
+                )}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                onClick={confirmAnswer}
+                disabled={stagedAnswer === null}
+                className="w-full"
+              >
+                Kiểm tra <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

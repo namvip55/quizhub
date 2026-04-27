@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
+import { sanitizeHtml, getAnonSecret } from "@/lib/utils";
 import { Clock, Loader2, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -116,7 +116,7 @@ const QuestionItem = memo(function QuestionItem({
         </div>
         <div className="flex-1 space-y-6">
           <div className="prose prose-sm dark:prose-invert max-w-none font-medium text-base">
-            <div dangerouslySetInnerHTML={{ __html: q.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.content) }} />
           </div>
           <div className="flex flex-col space-y-3">
             {options.map((opt, optIdx) => (
@@ -138,7 +138,7 @@ const QuestionItem = memo(function QuestionItem({
                   aria-label={`Option ${String.fromCharCode(65 + optIdx)}`}
                 />
                 <span className="text-sm sm:text-base leading-relaxed break-words flex-1">
-                  <div dangerouslySetInnerHTML={{ __html: opt }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(opt) }} />
                 </span>
               </label>
             ))}
@@ -174,6 +174,11 @@ function ExamPage() {
   }
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const answersRef = useRef(answers);
+
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   const {
     data: attempt,
@@ -185,10 +190,7 @@ function ExamPage() {
       const { data, error } = await supabase
         .rpc("get_exam_attempt", {
           attempt_id: attemptId,
-          secret:
-            localStorage.getItem("quizhub_anon_session_secret") ||
-            localStorage.getItem(`anon_secret_${attemptId}`) ||
-            null,
+          secret: getAnonSecret(attemptId),
         })
         .select("*, exams(*)")
         .single();
@@ -229,10 +231,7 @@ function ExamPage() {
       const { error } = await supabase.rpc("save_attempt_progress", {
         p_attempt_id: attemptId,
         p_answers: currentAnswers,
-        p_secret:
-          localStorage.getItem("quizhub_anon_session_secret") ||
-          localStorage.getItem(`anon_secret_${attemptId}`) ||
-          null,
+        p_secret: getAnonSecret(attemptId),
       });
       if (error) throw error;
     },
@@ -249,7 +248,7 @@ function ExamPage() {
   useEffect(() => {
     if (!attempt || attempt.is_finished || Object.keys(debouncedAnswers).length === 0) return;
     saveProgressMutation.mutate(debouncedAnswers);
-  }, [debouncedAnswers]);
+  }, [debouncedAnswers, attempt?.is_finished, saveProgressMutation]);
 
   const handleSelectAnswer = useCallback((qId: string, idx: number) => {
     setAnswers((prev) => {
@@ -263,10 +262,7 @@ function ExamPage() {
       const { error } = await supabase.rpc("submit_exam_attempt", {
         attempt_id: attemptId,
         user_answers: currentAnswers,
-        secret:
-          localStorage.getItem("quizhub_anon_session_secret") ||
-          localStorage.getItem(`anon_secret_${attemptId}`) ||
-          null,
+        secret: getAnonSecret(attemptId),
       });
 
       if (error) throw error;
@@ -284,10 +280,7 @@ function ExamPage() {
   const handleAutoSubmit = useCallback(() => {
     if (submitMutation.isPending || submitMutation.isSuccess) return;
     toast.error("Hết giờ! Đang tự động nộp bài...");
-    setAnswers((latest) => {
-      submitMutation.mutate(latest);
-      return latest;
-    });
+    submitMutation.mutate(answersRef.current);
   }, [submitMutation]);
 
   if (attemptLoading || questionsLoading) {
@@ -334,7 +327,7 @@ function ExamPage() {
               className="sm:hidden shrink-0"
               onClick={() => {
                 if (
-                  confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ được lưu trên hệ thống.")
+                  confirm("Bạn có chắc muốn thoát? Tiến trình đã được tự động lưu.")
                 ) {
                   navigate({ to: "/student" });
                 }
@@ -394,7 +387,7 @@ function ExamPage() {
               size="sm"
               className="hidden sm:flex border-destructive/20 text-destructive hover:bg-destructive/10"
               onClick={() => {
-                if (confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ không được lưu.")) {
+                if (confirm("Bạn có chắc muốn thoát? Tiến trình đã được tự động lưu.")) {
                   navigate({ to: "/student" });
                 }
               }}
