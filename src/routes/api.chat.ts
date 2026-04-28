@@ -1,23 +1,34 @@
 import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
+import { getEvent } from 'vinxi/http';
 
 // Helper to get environment variables in both Node.js and Cloudflare Workers
 function getEnvVar(name: string, context?: any): string | undefined {
-  // 1. Cloudflare Workers context (passed via handler)
+  // 1. Try to get from Vinxi/Nitro event context (The "Golden Standard" for TanStack Start)
+  try {
+    const event = getEvent();
+    const nitroEnv = (event?.context as any)?.cloudflare?.env;
+    if (nitroEnv?.[name]) return nitroEnv[name];
+    
+    const directEnv = (event?.context as any)?.env;
+    if (directEnv?.[name]) return directEnv[name];
+  } catch (e) {
+    // getEvent might fail in some environments, ignore and fallback
+  }
+
+  // 2. Fallback to passed context
   if (context?.env?.[name]) return context.env[name];
   if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
 
-  // 2. Cloudflare global env (Worker runtime)
+  // 3. Fallback to global/process (Local development)
   const gThis = globalThis as any;
   if (gThis.env?.[name]) return gThis.env[name];
-  if (gThis[name]) return gThis[name];
-
-  // 3. Node.js process.env (local development)
+  
   if (typeof process !== 'undefined' && process.env?.[name]) {
     return process.env[name];
   }
 
-  // 4. Vite import.meta.env (build-time) - safe check using try-catch
+  // 4. Vite import.meta.env
   try {
     if ((import.meta as any).env?.[name]) {
       return (import.meta as any).env[name];
