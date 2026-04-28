@@ -4,5 +4,12 @@
   "compatibility_date": "2024-09-23",
   "pages_build_output_dir": "dist/client",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "NVIDIA_NIM_BASE_URL": "https://integrate.api.nvidia.com/v1",
+    "NVIDIA_NIM_MODEL": "deepseek-ai/deepseek-v4-pro",
+    "SUPABASE_URL": "https://inyqkjsdcwifzhxayjmo.supabase.co",
+    "VITE_SUPABASE_URL": "https://inyqkjsdcwifzhxayjmo.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3"
+  },
   "main": "@tanstack/react-start/server-entry"
 }
