@@ -9,6 +9,15 @@ pages_build_output_dir = "dist/client"
 # 2. VITE_SUPABASE_PUBLISHABLE_KEY
 # 3. SUPABASE_URL
 # 4. SUPABASE_SERVICE_ROLE_KEY
+# 5. NVIDIA_NIM_API_KEY (NEW)
+# 6. NVIDIA_NIM_BASE_URL (NEW)
+# 7. NVIDIA_NIM_MODEL (NEW)
 
 [vars]
 # NODE_VERSION will be set in the Cloudflare Dashboard to 22
+
+# KV Namespace for rate limiting (optional, create in Cloudflare Dashboard)
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"

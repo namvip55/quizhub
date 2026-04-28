@@ -9,6 +9,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { AIChatWidget } from "@/components/chat";
 
 import appCss from "../styles.css?url";
 
@@ -115,6 +116,7 @@ function RootComponent() {
       )}
       <Outlet />
       <Toaster richColors closeButton position="top-right" theme="dark" />
+      <AIChatWidget />
     </AuthProvider>
   );
 }

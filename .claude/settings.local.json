@@ -11,7 +11,9 @@
       "Bash(SUPABASE_URL=https://inyqkjsdcwifzhxayjmo.supabase.co SUPABASE_ANON_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 SUPABASE_SERVICE_ROLE_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 MCP_API_KEY=local-dev-key MCP_SERVER_PORT=3001 npx -y supabase-mcp@latest supabase-mcp-claude)",
       "Bash(SUPABASE_URL=https://inyqkjsdcwifzhxayjmo.supabase.co SUPABASE_ANON_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 SUPABASE_SERVICE_ROLE_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 npx -y supabase-mcp)",
       "Bash(SUPABASE_URL=https://inyqkjsdcwifzhxayjmo.supabase.co SUPABASE_ANON_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 SUPABASE_SERVICE_ROLE_KEY=sb_publishable_hpU3c24J9ONK2eN-cIN0pQ_VhWDmjY3 MCP_API_KEY=local-dev-key npx -y supabase-mcp)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(claude doctor *)",
+      "Bash(npm install *)"
     ]
   }
 }
