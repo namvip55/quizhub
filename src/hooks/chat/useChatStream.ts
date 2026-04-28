@@ -108,8 +108,30 @@ export function useChatStream({
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP ${response.status}`);
+          // Check if response is JSON or HTML
+          const contentType = response.headers.get("content-type");
+          let errorMessage = `HTTP ${response.status}`;
+
+          if (contentType?.includes("application/json")) {
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              errorMessage = `Server returned ${response.status}`;
+            }
+          } else if (contentType?.includes("text/html")) {
+            // HTML response means we hit the SPA fallback instead of the API
+            errorMessage = "API endpoint not found. Make sure to run 'npm run dev:all' to enable Cloudflare Pages Functions locally.";
+          } else {
+            try {
+              const text = await response.text();
+              errorMessage = text || errorMessage;
+            } catch {
+              errorMessage = `Server returned ${response.status}`;
+            }
+          }
+
+          throw new Error(errorMessage);
         }
 
         // 4. Parse SSE stream
