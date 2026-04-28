@@ -3,17 +3,14 @@ import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
 // Helper to get environment variables in both Node.js and Cloudflare Workers
 function getEnvVar(name: string, context?: any): string | undefined {
-  // Priority order for environment variable access:
-
   // 1. Cloudflare Workers context (passed via handler)
-  if (context && context.env && context.env[name]) {
-    return context.env[name];
-  }
+  if (context?.env?.[name]) return context.env[name];
+  if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
 
   // 2. Cloudflare global env (Worker runtime)
-  if (typeof globalThis !== 'undefined' && (globalThis as any).env?.[name]) {
-    return (globalThis as any).env[name];
-  }
+  const gThis = globalThis as any;
+  if (gThis.env?.[name]) return gThis.env[name];
+  if (gThis[name]) return gThis[name];
 
   // 3. Node.js process.env (local development)
   if (typeof process !== 'undefined' && process.env?.[name]) {
@@ -22,14 +19,10 @@ function getEnvVar(name: string, context?: any): string | undefined {
 
   // 4. Vite import.meta.env (build-time) - safe check using try-catch
   try {
-    // @ts-ignore - import.meta is only available in Vite builds
     if ((import.meta as any).env?.[name]) {
-      // @ts-ignore
       return (import.meta as any).env[name];
     }
-  } catch (e) {
-    // import.meta not available in this environment (e.g., Node.js runtime)
-  }
+  } catch (e) {}
 
   return undefined;
 }
@@ -180,17 +173,22 @@ export const Route = createFileRoute('/api/chat')({
           const model = getEnvVar('NVIDIA_NIM_MODEL', context);
 
           if (!apiKey || !baseUrl || !model) {
-            console.error('Missing NVIDIA environment variables:', {
-              hasApiKey: !!apiKey,
-              hasBaseUrl: !!baseUrl,
-              hasModel: !!model,
-              contextKeys: context ? Object.keys(context) : 'no context',
-              isCloudflare: typeof globalThis !== 'undefined' && 'env' in globalThis
-            });
             return new Response(
               JSON.stringify({
-                error: 'Server configuration error: NVIDIA API environment variables not configured',
-                details: 'Check Cloudflare Workers Secrets/Vars configuration'
+                error: 'Server configuration error',
+                debug: {
+                  missing: {
+                    apiKey: !apiKey,
+                    baseUrl: !baseUrl,
+                    model: !model
+                  },
+                  runtime: typeof process !== 'undefined' ? 'Node' : 'Worker',
+                  hasContext: !!context,
+                  contextKeys: context ? Object.keys(context) : [],
+                  hasCfInContext: !!context?.cloudflare,
+                  hasEnvInContext: !!context?.env,
+                  hasGlobalEnv: !!(globalThis as any).env
+                }
               }),
               {
                 status: 500,
