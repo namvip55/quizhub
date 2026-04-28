@@ -150,10 +150,27 @@ export function useChatStream({
               if (!data) continue;
 
               try {
-                const chunk: StreamChunk = JSON.parse(data);
+                const parsed = JSON.parse(data);
 
-                if (chunk.type === "chunk" && chunk.content) {
-                  assistantContent += chunk.content;
+                // Extract content based on format (Custom vs OpenAI)
+                let contentToAdd = "";
+                let isDone = false;
+                let isError = false;
+                let errorMessage = "";
+
+                if (parsed.type === "chunk" && parsed.content) {
+                  contentToAdd = parsed.content;
+                } else if (parsed.choices?.[0]?.delta?.content) {
+                  contentToAdd = parsed.choices[0].delta.content;
+                } else if (parsed.type === "done" || parsed.choices?.[0]?.finish_reason === "stop") {
+                  isDone = true;
+                } else if (parsed.type === "error" || parsed.error) {
+                  isError = true;
+                  errorMessage = parsed.message || parsed.error?.message || "Stream error";
+                }
+
+                if (contentToAdd) {
+                  assistantContent += contentToAdd;
 
                   // Update cache with new content
                   queryClient.setQueryData<ChatMessage[]>(
@@ -165,7 +182,7 @@ export function useChatStream({
                           : msg
                       )
                   );
-                } else if (chunk.type === "done") {
+                } else if (isDone) {
                   // Stream complete, save assistant message to database
                   const savedAssistantMessage = await saveMessageMutation.mutateAsync({
                     role: "assistant",
@@ -182,8 +199,8 @@ export function useChatStream({
                   );
 
                   onComplete?.();
-                } else if (chunk.type === "error") {
-                  throw new Error(chunk.message || "Stream error");
+                } else if (isError) {
+                  throw new Error(errorMessage);
                 }
               } catch (parseError) {
                 console.error("Failed to parse SSE chunk:", parseError);

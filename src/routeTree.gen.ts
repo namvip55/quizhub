@@ -25,6 +25,7 @@ import { Route as DashboardSubjectsRouteImport } from './routes/dashboard.subjec
 import { Route as DashboardResultsRouteImport } from './routes/dashboard.results'
 import { Route as DashboardImportRouteImport } from './routes/dashboard.import'
 import { Route as DashboardExamsRouteImport } from './routes/dashboard.exams'
+import { Route as ApiDebugWorkersRouteImport } from './routes/api.debug-workers'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 
 const StudentRoute = StudentRouteImport.update({
@@ -107,6 +108,11 @@ const DashboardExamsRoute = DashboardExamsRouteImport.update({
   path: '/exams',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiDebugWorkersRoute = ApiDebugWorkersRouteImport.update({
+  id: '/api/debug-workers',
+  path: '/api/debug-workers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/debug-workers': typeof ApiDebugWorkersRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/debug-workers': typeof ApiDebugWorkersRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/debug-workers': typeof ApiDebugWorkersRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/student'
     | '/api/chat'
+    | '/api/debug-workers'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/student'
     | '/api/chat'
+    | '/api/debug-workers'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/student'
     | '/api/chat'
+    | '/api/debug-workers'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   StudentRoute: typeof StudentRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiDebugWorkersRoute: typeof ApiDebugWorkersRoute
   ExamAttemptIdRoute: typeof ExamAttemptIdRoute
   ExamCodeRoute: typeof ExamCodeRoute
   LobbyExamCodeRoute: typeof LobbyExamCodeRoute
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardExamsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/debug-workers': {
+      id: '/api/debug-workers'
+      path: '/api/debug-workers'
+      fullPath: '/api/debug-workers'
+      preLoaderRoute: typeof ApiDebugWorkersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   StudentRoute: StudentRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiDebugWorkersRoute: ApiDebugWorkersRoute,
   ExamAttemptIdRoute: ExamAttemptIdRoute,
   ExamCodeRoute: ExamCodeRoute,
   LobbyExamCodeRoute: LobbyExamCodeRoute,
