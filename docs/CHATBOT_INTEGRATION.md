@@ -302,6 +302,25 @@ CREATE POLICY "Anonymous users can create sessions"
   WITH CHECK (user_id IS NULL);
 ```
 
+### 6. Lỗi build: "Import denied in server environment"
+**Nguyên nhân:** TanStack Start có plugin `import-protection` ngăn chặn import file `.client.tsx` vào các route isomorphic (như `__root.tsx`). Ngay cả khi dùng `lazy()`, plugin vẫn quét tĩnh và báo lỗi.
+**Fix:** 
+- Đổi tên `AIChatWidget.client.tsx` → `AIChatWidget.tsx` (isomorphic name).
+- Đổi tên `useChatStream.client.ts` → `useChatStream.ts`.
+- Đảm bảo code bên trong chỉ chạy ở client bằng `useEffect` hoặc check `typeof window`.
+
+### 7. Lỗi 500 khi chạy trên Cloudflare (nhưng local OK)
+**Nguyên nhân:** `process.env` không được populate tự động trong Cloudflare Workers/Pages Functions cho các biến bí mật (Secrets).
+**Fix:** Truy cập env var thông qua `globalThis.env` hoặc kiểm tra cả hai nguồn:
+```typescript
+const env = typeof process !== 'undefined' ? process.env : (globalThis as any).env || {};
+const apiKey = env.NVIDIA_NIM_API_KEY;
+```
+
+### 8. Barrel files (`index.ts`) gây lỗi import
+**Nguyên nhân:** Re-export client components trong file `index.ts` không có hậu tố `.client` khiến plugin bảo vệ kéo nhầm code client vào server bundle.
+**Fix:** Xóa các file `index.ts` trung gian và dùng **Direct Import** (import trực tiếp từ file gốc).
+
 ---
 
 ## 📦 Models NVIDIA NIM khác có thể dùng

@@ -64,12 +64,19 @@ Guidelines:
 async function streamNvidiaResponse(
   messages: Array<{ role: string; content: string }>
 ): Promise<ReadableStream<Uint8Array>> {
-  const apiKey = process.env.NVIDIA_NIM_API_KEY;
-  const baseUrl = process.env.NVIDIA_NIM_BASE_URL;
-  const model = process.env.NVIDIA_NIM_MODEL;
+  // Access env vars safely for both Node and Cloudflare/Worker environments
+  const env = typeof process !== 'undefined' ? process.env : (globalThis as any).env || {};
+  const apiKey = env.NVIDIA_NIM_API_KEY;
+  const baseUrl = env.NVIDIA_NIM_BASE_URL;
+  const model = env.NVIDIA_NIM_MODEL;
 
   if (!apiKey || !baseUrl || !model) {
-    throw new Error('NVIDIA NIM environment variables not configured');
+    console.error('Missing NVIDIA environment variables:', { 
+      hasApiKey: !!apiKey, 
+      hasBaseUrl: !!baseUrl, 
+      hasModel: !!model 
+    });
+    throw new Error('NVIDIA NIM environment variables not configured on server');
   }
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -191,12 +198,14 @@ export const Route = createFileRoute('/api/chat')({
         });
       }
 
-      const apiKey = process.env.NVIDIA_NIM_API_KEY;
-      const baseUrl = process.env.NVIDIA_NIM_BASE_URL;
-      const model = process.env.NVIDIA_NIM_MODEL;
+      // Non-streaming fallback
+      const env = typeof process !== 'undefined' ? process.env : (globalThis as any).env || {};
+      const apiKey = env.NVIDIA_NIM_API_KEY;
+      const baseUrl = env.NVIDIA_NIM_BASE_URL;
+      const model = env.NVIDIA_NIM_MODEL;
 
       if (!apiKey || !baseUrl || !model) {
-        throw new Error('NVIDIA NIM environment variables not configured');
+        throw new Error('NVIDIA NIM environment variables not configured on server');
       }
 
       const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -217,7 +226,8 @@ export const Route = createFileRoute('/api/chat')({
       });
 
       if (!response.ok) {
-        throw new Error(`NVIDIA API error: ${response.status}`);
+        const errorDetail = await response.text();
+        throw new Error(`NVIDIA API error: ${response.status} - ${errorDetail}`);
       }
 
       const data = await response.json();
@@ -238,9 +248,11 @@ export const Route = createFileRoute('/api/chat')({
       );
     } catch (error) {
       console.error('Chat API error:', error);
+      // Return more descriptive error for debugging in development/preview
       return new Response(
         JSON.stringify({
           error: error instanceof Error ? error.message : 'Internal server error',
+          details: error instanceof Error ? error.stack : undefined,
         }),
         {
           status: 500,
