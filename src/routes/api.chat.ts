@@ -3,6 +3,8 @@ import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
 // Helper to get environment variables in both Node.js and Cloudflare Workers
 function getEnvVar(name: string, context?: any): string | undefined {
+  const viteName = `VITE_${name}`;
+  
   // Priority order for environment variable access:
 
   // 1. Vite import.meta.env (build-time) - PRIMARY for TanStack Start on Cloudflare
@@ -10,8 +12,7 @@ function getEnvVar(name: string, context?: any): string | undefined {
     // @ts-ignore - import.meta is only available in Vite builds
     const viteEnv = (import.meta as any).env;
     if (viteEnv?.[name]) return viteEnv[name];
-    // Also try with VITE_ prefix for TanStack Start injection
-    if (viteEnv?.[`VITE_${name}`]) return viteEnv[`VITE_${name}`];
+    if (viteEnv?.[viteName]) return viteEnv[viteName];
   } catch (e) {
     // import.meta not available in this environment
   }
@@ -19,14 +20,18 @@ function getEnvVar(name: string, context?: any): string | undefined {
   // 2. Cloudflare global env (Worker runtime)
   const gThis = globalThis as any;
   if (gThis.env?.[name]) return gThis.env[name];
+  if (gThis.env?.[viteName]) return gThis.env[viteName];
 
   // 3. Cloudflare Workers context (passed via handler)
   if (context?.env?.[name]) return context.env[name];
+  if (context?.env?.[viteName]) return context.env[viteName];
   if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
+  if (context?.cloudflare?.env?.[viteName]) return context.cloudflare.env[viteName];
 
   // 4. Node.js process.env (local development)
-  if (typeof process !== 'undefined' && process.env?.[name]) {
-    return process.env[name];
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env[name]) return process.env[name];
+    if (process.env[viteName]) return process.env[viteName];
   }
 
   return undefined;
