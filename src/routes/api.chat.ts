@@ -166,46 +166,6 @@ export const Route = createFileRoute('/api/chat')({
   // @ts-ignore - server property is valid in TanStack Start v1.167
   server: {
     handlers: {
-      GET: async () => {
-        const pEnv = typeof process !== 'undefined' ? process.env : {};
-        const gEnv = (globalThis as any).env || {};
-        const gThis = globalThis as any;
-        
-        // List of places we check
-        const checks = {
-          process_env: {
-            API_KEY: !!pEnv.NVIDIA_NIM_API_KEY,
-            BASE_URL: !!pEnv.NVIDIA_NIM_BASE_URL,
-            MODEL: !!pEnv.NVIDIA_NIM_MODEL,
-          },
-          globalThis_env: {
-            API_KEY: !!gEnv.NVIDIA_NIM_API_KEY,
-            BASE_URL: !!gEnv.NVIDIA_NIM_BASE_URL,
-            MODEL: !!gEnv.NVIDIA_NIM_MODEL,
-          },
-          globalThis_direct: {
-            API_KEY: !!gThis.NVIDIA_NIM_API_KEY,
-            BASE_URL: !!gThis.NVIDIA_NIM_BASE_URL,
-            MODEL: !!gThis.NVIDIA_NIM_MODEL,
-          },
-          import_meta_env: {
-            // Vite build-time replacement
-            API_KEY: !!(import.meta.env as any).NVIDIA_NIM_API_KEY,
-            BASE_URL: !!(import.meta.env as any).NVIDIA_NIM_BASE_URL,
-            MODEL: !!(import.meta.env as any).NVIDIA_NIM_MODEL,
-          }
-        };
-
-        return new Response(JSON.stringify({ 
-          status: 'Chat API Diagnostics',
-          checks,
-          processEnvKeys: Object.keys(pEnv).filter(k => !k.includes('KEY') && !k.includes('SECRET') && !k.includes('TOKEN')),
-          globalKeys: Object.keys(gThis).filter(k => k.startsWith('NVIDIA')),
-          runtime: typeof process !== 'undefined' ? 'Node/Compat' : 'Worker Native'
-        }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      },
       POST: async ({ request }) => {
     try {
       const body = await request.json();
@@ -241,7 +201,7 @@ export const Route = createFileRoute('/api/chat')({
         const model = getEnvVar('NVIDIA_NIM_MODEL');
 
         if (!apiKey || !baseUrl || !model) {
-          throw new Error(`Missing NVIDIA NIM environment variables: ${!apiKey ? 'API_KEY ' : ''}${!baseUrl ? 'BASE_URL ' : ''}${!model ? 'MODEL' : ''}`);
+          throw new Error('NVIDIA NIM environment variables not configured on server');
         }
 
         const nvidiaStream = await fetch(`${baseUrl}/chat/completions`, {
@@ -302,8 +262,7 @@ export const Route = createFileRoute('/api/chat')({
       });
 
       if (!response.ok) {
-        const errorDetail = await response.text();
-        throw new Error(`NVIDIA API error: ${response.status} - ${errorDetail}`);
+        throw new Error(`NVIDIA API error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -324,11 +283,9 @@ export const Route = createFileRoute('/api/chat')({
       );
     } catch (error) {
       console.error('Chat API error:', error);
-      // Return more descriptive error for debugging in development/preview
       return new Response(
         JSON.stringify({
           error: error instanceof Error ? error.message : 'Internal server error',
-          details: error instanceof Error ? error.stack : undefined,
         }),
         {
           status: 500,
