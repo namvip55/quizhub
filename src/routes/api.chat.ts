@@ -191,18 +191,14 @@ export const Route = createFileRoute('/api/chat')({
             API_KEY: !!gEnv.NVIDIA_NIM_API_KEY,
             BASE_URL: !!gEnv.NVIDIA_NIM_BASE_URL,
             MODEL: !!gEnv.NVIDIA_NIM_MODEL,
-          },
-          globalThis_direct: {
-            API_KEY: !!gThis.NVIDIA_NIM_API_KEY,
-            BASE_URL: !!gThis.NVIDIA_NIM_BASE_URL,
-            MODEL: !!gThis.NVIDIA_NIM_MODEL,
           }
         };
 
         return new Response(JSON.stringify({ 
-          status: 'Chat API Diagnostics v2',
+          status: 'Chat API Diagnostics v3',
           checks,
-          hasCfEnv: !!cfEnv,
+          cfEnvKeys: cfEnv ? Object.keys(cfEnv) : [],
+          processEnvKeys: Object.keys(pEnv).filter(k => !k.includes('KEY') && !k.includes('SECRET')),
           runtime: typeof process !== 'undefined' ? 'Node/Compat' : 'Worker Native'
         }), {
           headers: { 'Content-Type': 'application/json' }
@@ -234,9 +230,13 @@ export const Route = createFileRoute('/api/chat')({
         const gThis = globalThis as any;
         const iEnv = import.meta.env as any;
         
-        // Try cloudflare:workers env first, then others
-        const val = (cfEnv && cfEnv[name]) || pEnv[name] || gEnv[name] || gThis[name] || iEnv[name];
-        return val;
+        // Priority order for environment variable detection
+        return (cfEnv && cfEnv[name]) || 
+               pEnv[name] || 
+               gEnv[name] || 
+               gThis[name] || 
+               (gThis.env && gThis.env[name]) ||
+               iEnv[name];
       };
 
       if (chatRequest.stream) {
