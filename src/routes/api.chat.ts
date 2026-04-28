@@ -1,18 +1,35 @@
 import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
-// Safe way to get Cloudflare env without breaking local dev
-let cfEnv: any = null;
-if (typeof process === 'undefined' || process.env.NODE_ENV === 'production') {
-  try {
-    // We'll try to access it via globalThis which is often populated in Workers
-    cfEnv = (globalThis as any).env;
-  } catch (e) {}
+// Helper to get environment variables in both Node.js and Cloudflare Workers
+function getEnvVar(name: string, context?: any): string | undefined {
+  // Priority order for environment variable access:
+
+  // 1. Cloudflare Workers context (passed via handler)
+  if (context && context.env && context.env[name]) {
+    return context.env[name];
+  }
+
+  // 2. Cloudflare global env (Worker runtime)
+  if (typeof globalThis !== 'undefined' && (globalThis as any).env?.[name]) {
+    return (globalThis as any).env[name];
+  }
+
+  // 3. Node.js process.env (local development)
+  if (typeof process !== 'undefined' && process.env?.[name]) {
+    return process.env[name];
+  }
+
+  // 4. Vite import.meta.env (build-time)
+  if (typeof import !== 'undefined' && (import.meta as any).env?.[name]) {
+    return (import.meta as any).env[name];
+  }
+
+  return undefined;
 }
 
 // Request validation
 function validateChatRequest(body: unknown): { valid: boolean; data?: ChatRequest; error?: string } {
-// ... (rest of validation same)
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Invalid request body' };
   }
@@ -68,50 +85,6 @@ Guidelines:
   }
 
   return basePrompt;
-}
-
-// NVIDIA NIM API streaming call
-async function streamNvidiaResponse(
-  messages: Array<{ role: string; content: string }>
-): Promise<ReadableStream<Uint8Array>> {
-  // Access env vars safely for both Node and Cloudflare/Worker environments
-  const env = typeof process !== 'undefined' ? process.env : (globalThis as any).env || {};
-  const apiKey = env.NVIDIA_NIM_API_KEY;
-  const baseUrl = env.NVIDIA_NIM_BASE_URL;
-  const model = env.NVIDIA_NIM_MODEL;
-
-  if (!apiKey || !baseUrl || !model) {
-    console.error('Missing NVIDIA environment variables:', { 
-      hasApiKey: !!apiKey, 
-      hasBaseUrl: !!baseUrl, 
-      hasModel: !!model 
-    });
-    throw new Error('NVIDIA NIM environment variables not configured on server');
-  }
-
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true,
-      max_tokens: 16384,
-      temperature: 1,
-      top_p: 0.95,
-      chat_template_kwargs: { thinking: false },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`NVIDIA API error: ${response.status} - ${errorText}`);
-  }
-
-  return response.body!;
 }
 
 // Parse SSE stream from NVIDIA and convert to our format
@@ -173,137 +146,137 @@ function parseSSEStream(nvidiaStream: ReadableStream<Uint8Array>): ReadableStrea
 }
 
 export const Route = createFileRoute('/api/chat')({
+  // @ts-ignore - server property is valid in TanStack Start v1.167
   server: {
     handlers: {
-      POST: async ({ request }) => {
-    try {
-      const body = await request.json();
-      const validation = validateChatRequest(body);
+      POST: async ({ request, context }) => {
+        try {
+          const body = await request.json();
+          const validation = validateChatRequest(body);
 
-      if (!validation.valid) {
-        return new Response(JSON.stringify({ error: validation.error }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+          if (!validation.valid) {
+            return new Response(JSON.stringify({ error: validation.error }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
 
-      const chatRequest = validation.data!;
-      const systemPrompt = buildSystemPrompt(chatRequest.context);
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: chatRequest.message },
-      ];
+          const chatRequest = validation.data!;
+          const systemPrompt = buildSystemPrompt(chatRequest.context);
+          const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: chatRequest.message },
+          ];
 
-      // Robust env var getter for server handlers
-      const getEnvVar = (name: string) => {
-        const pEnv = typeof process !== 'undefined' ? process.env : {};
-        const gThis = globalThis as any;
-        const iEnv = import.meta.env as any;
-        
-        // Priority:
-        // 1. Cloudflare env object (if available)
-        // 2. process.env (Local/Node)
-        // 3. globalThis direct (Worker legacy)
-        // 4. import.meta.env (Vite build-time)
-        return (cfEnv && cfEnv[name]) || 
-               pEnv[name] || 
-               gThis[name] || 
-               (gThis.env && gThis.env[name]) ||
-               iEnv[name];
-      };
+          // Get environment variables with context (Cloudflare Workers passes env via context)
+          const apiKey = getEnvVar('NVIDIA_NIM_API_KEY', context);
+          const baseUrl = getEnvVar('NVIDIA_NIM_BASE_URL', context);
+          const model = getEnvVar('NVIDIA_NIM_MODEL', context);
 
-      const apiKey = getEnvVar('NVIDIA_NIM_API_KEY');
-      const baseUrl = getEnvVar('NVIDIA_NIM_BASE_URL');
-      const model = getEnvVar('NVIDIA_NIM_MODEL');
+          if (!apiKey || !baseUrl || !model) {
+            console.error('Missing NVIDIA environment variables:', {
+              hasApiKey: !!apiKey,
+              hasBaseUrl: !!baseUrl,
+              hasModel: !!model,
+              contextKeys: context ? Object.keys(context) : 'no context',
+              isCloudflare: typeof globalThis !== 'undefined' && 'env' in globalThis
+            });
+            return new Response(
+              JSON.stringify({
+                error: 'Server configuration error: NVIDIA API environment variables not configured',
+                details: 'Check Cloudflare Workers Secrets/Vars configuration'
+              }),
+              {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
 
-      if (!apiKey || !baseUrl || !model) {
-        throw new Error('Server environment variables not configured');
-      }
+          if (chatRequest.stream) {
+            const nvidiaResponse = await fetch(`${baseUrl}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model,
+                messages,
+                stream: true,
+                max_tokens: 16384,
+                temperature: 0.7,
+                top_p: 0.95,
+              }),
+            });
 
-      if (chatRequest.stream) {
-        const nvidiaResponse = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model,
-            messages,
-            stream: true,
-            max_tokens: 16384,
-            temperature: 0.7,
-            top_p: 0.95,
-          }),
-        });
+            if (!nvidiaResponse.ok) {
+              const errorText = await nvidiaResponse.text();
+              throw new Error(`NVIDIA API error: ${nvidiaResponse.status} ${errorText}`);
+            }
 
-        if (!nvidiaResponse.ok) {
-          const errorText = await nvidiaResponse.text();
-          throw new Error(`NVIDIA API error: ${nvidiaResponse.status} ${errorText}`);
+            const nvidiaStream = nvidiaResponse.body!;
+            const sseStream = parseSSEStream(nvidiaStream);
+
+            return new Response(sseStream, {
+              headers: {
+                'Content-Type': 'text/event-stream; charset=utf-8',
+                'Cache-Control': 'no-cache, no-transform',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no', // Disable buffering for Nginx/Proxies
+              },
+            });
+          }
+
+          // Non-streaming fallback
+          const response = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages,
+              stream: false,
+              max_tokens: 16384,
+              temperature: 0.7,
+              top_p: 0.95,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`NVIDIA API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const content = data.choices?.[0]?.message?.content || '';
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: {
+                content,
+                messageId: crypto.randomUUID(),
+                sessionId: chatRequest.sessionId || crypto.randomUUID(),
+              },
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        } catch (error) {
+          console.error('Chat API error:', error);
+          return new Response(
+            JSON.stringify({
+              error: error instanceof Error ? error.message : 'Internal server error',
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
-
-        const nvidiaStream = nvidiaResponse.body!;
-        const sseStream = parseSSEStream(nvidiaStream);
-
-        return new Response(sseStream, {
-          headers: {
-            'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection': 'keep-alive',
-            'X-Accel-Buffering': 'no', // Disable buffering for Nginx/Proxies
-          },
-        });
-      }
-
-      // Non-streaming fallback
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          stream: false,
-          max_tokens: 16384,
-          temperature: 0.7,
-          top_p: 0.95,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`NVIDIA API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            content,
-            messageId: crypto.randomUUID(),
-            sessionId: chatRequest.sessionId || crypto.randomUUID(),
-          },
-        }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    } catch (error) {
-      console.error('Chat API error:', error);
-      return new Response(
-        JSON.stringify({
-          error: error instanceof Error ? error.message : 'Internal server error',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
       },
     },
   },
