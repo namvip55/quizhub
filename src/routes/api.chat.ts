@@ -1,39 +1,33 @@
 import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
-import { getEvent } from 'vinxi/http';
 
 // Helper to get environment variables in both Node.js and Cloudflare Workers
 function getEnvVar(name: string, context?: any): string | undefined {
-  // 1. Try to get from Vinxi/Nitro event context (The "Golden Standard" for TanStack Start)
-  try {
-    const event = getEvent();
-    const nitroEnv = (event?.context as any)?.cloudflare?.env;
-    if (nitroEnv?.[name]) return nitroEnv[name];
-    
-    const directEnv = (event?.context as any)?.env;
-    if (directEnv?.[name]) return directEnv[name];
-  } catch (e) {
-    // getEvent might fail in some environments, ignore and fallback
-  }
+  // Priority order for environment variable access:
 
-  // 2. Fallback to passed context
+  // 1. Cloudflare Workers context (passed via handler) - Primary method for TanStack Start
   if (context?.env?.[name]) return context.env[name];
   if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
 
-  // 3. Fallback to global/process (Local development)
+  // 2. Cloudflare global env (Worker runtime)
   const gThis = globalThis as any;
   if (gThis.env?.[name]) return gThis.env[name];
-  
+
+  // 3. Node.js process.env (local development)
   if (typeof process !== 'undefined' && process.env?.[name]) {
     return process.env[name];
   }
 
-  // 4. Vite import.meta.env
+  // 4. Vite import.meta.env (build-time)
   try {
+    // @ts-ignore - import.meta is only available in Vite builds
     if ((import.meta as any).env?.[name]) {
+      // @ts-ignore
       return (import.meta as any).env[name];
     }
-  } catch (e) {}
+  } catch (e) {
+    // import.meta not available in this environment
+  }
 
   return undefined;
 }
@@ -186,7 +180,7 @@ export const Route = createFileRoute('/api/chat')({
           if (!apiKey || !baseUrl || !model) {
             return new Response(
               JSON.stringify({
-                error: 'Server configuration error',
+                error: 'Server configuration error: NVIDIA API environment variables not configured',
                 debug: {
                   missing: {
                     apiKey: !apiKey,
