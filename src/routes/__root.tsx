@@ -4,15 +4,16 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  createClientOnlyFn,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 
-// Dynamic import to bypass TanStack Start's SSR import-protection on *.client.* files
+// Dynamic import of the chat widget
 const AIChatWidget = lazy(() =>
-  import("@/components/chat/AIChatWidget.client").then((m) => ({ default: m.AIChatWidget }))
+  import("@/components/chat/AIChatWidget").then((m) => ({ default: m.AIChatWidget }))
 );
 
 import appCss from "../styles.css?url";
