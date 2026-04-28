@@ -5,28 +5,28 @@ import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 function getEnvVar(name: string, context?: any): string | undefined {
   // Priority order for environment variable access:
 
-  // 1. Cloudflare Workers context (passed via handler) - Primary method for TanStack Start
-  if (context?.env?.[name]) return context.env[name];
-  if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
+  // 1. Vite import.meta.env (build-time) - PRIMARY for TanStack Start on Cloudflare
+  try {
+    // @ts-ignore - import.meta is only available in Vite builds
+    const viteEnv = (import.meta as any).env;
+    if (viteEnv?.[name]) return viteEnv[name];
+    // Also try with VITE_ prefix for TanStack Start injection
+    if (viteEnv?.[`VITE_${name}`]) return viteEnv[`VITE_${name}`];
+  } catch (e) {
+    // import.meta not available in this environment
+  }
 
   // 2. Cloudflare global env (Worker runtime)
   const gThis = globalThis as any;
   if (gThis.env?.[name]) return gThis.env[name];
 
-  // 3. Node.js process.env (local development)
+  // 3. Cloudflare Workers context (passed via handler)
+  if (context?.env?.[name]) return context.env[name];
+  if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
+
+  // 4. Node.js process.env (local development)
   if (typeof process !== 'undefined' && process.env?.[name]) {
     return process.env[name];
-  }
-
-  // 4. Vite import.meta.env (build-time)
-  try {
-    // @ts-ignore - import.meta is only available in Vite builds
-    if ((import.meta as any).env?.[name]) {
-      // @ts-ignore
-      return (import.meta as any).env[name];
-    }
-  } catch (e) {
-    // import.meta not available in this environment
   }
 
   return undefined;
@@ -178,6 +178,12 @@ export const Route = createFileRoute('/api/chat')({
           const model = getEnvVar('NVIDIA_NIM_MODEL', context);
 
           if (!apiKey || !baseUrl || !model) {
+            const gThis = globalThis as any;
+            let importMetaEnv: any = null;
+            try {
+              importMetaEnv = (import.meta as any).env;
+            } catch (e) {}
+
             return new Response(
               JSON.stringify({
                 error: 'Server configuration error: NVIDIA API environment variables not configured',
@@ -192,7 +198,10 @@ export const Route = createFileRoute('/api/chat')({
                   contextKeys: context ? Object.keys(context) : [],
                   hasCfInContext: !!context?.cloudflare,
                   hasEnvInContext: !!context?.env,
-                  hasGlobalEnv: !!(globalThis as any).env
+                  hasGlobalEnv: !!gThis.env,
+                  globalEnvKeys: gThis.env ? Object.keys(gThis.env) : [],
+                  hasImportMetaEnv: !!importMetaEnv,
+                  importMetaEnvKeys: importMetaEnv ? Object.keys(importMetaEnv).filter(k => k.includes('NVIDIA') || k.includes('VITE')) : []
                 }
               }),
               {
