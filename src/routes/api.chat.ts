@@ -1,8 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
-// @ts-ignore
-import { env as cfEnv } from 'cloudflare:workers';
+// Safe way to get Cloudflare env without breaking local dev
+let cfEnv: any = null;
+if (typeof process === 'undefined' || process.env.NODE_ENV === 'production') {
+  try {
+    // We'll try to access it via globalThis which is often populated in Workers
+    cfEnv = (globalThis as any).env;
+  } catch (e) {}
+}
 
 // Request validation
 function validateChatRequest(body: unknown): { valid: boolean; data?: ChatRequest; error?: string } {
@@ -191,13 +197,16 @@ export const Route = createFileRoute('/api/chat')({
       // Robust env var getter for server handlers
       const getEnvVar = (name: string) => {
         const pEnv = typeof process !== 'undefined' ? process.env : {};
-        const gEnv = (globalThis as any).env || {};
         const gThis = globalThis as any;
         const iEnv = import.meta.env as any;
         
+        // Priority:
+        // 1. Cloudflare env object (if available)
+        // 2. process.env (Local/Node)
+        // 3. globalThis direct (Worker legacy)
+        // 4. import.meta.env (Vite build-time)
         return (cfEnv && cfEnv[name]) || 
                pEnv[name] || 
-               gEnv[name] || 
                gThis[name] || 
                (gThis.env && gThis.env[name]) ||
                iEnv[name];
