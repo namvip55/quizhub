@@ -166,6 +166,24 @@ export const Route = createFileRoute('/api/chat')({
   // @ts-ignore - server property is valid in TanStack Start v1.167
   server: {
     handlers: {
+      GET: async () => {
+        const env = typeof process !== 'undefined' ? process.env : (globalThis as any).env || {};
+        const hasApiKey = !!env.NVIDIA_NIM_API_KEY;
+        const hasBaseUrl = !!env.NVIDIA_NIM_BASE_URL;
+        const hasModel = !!env.NVIDIA_NIM_MODEL;
+        
+        return new Response(JSON.stringify({ 
+          status: 'Chat API is alive',
+          envConfigured: {
+            NVIDIA_NIM_API_KEY: hasApiKey,
+            NVIDIA_NIM_BASE_URL: hasBaseUrl,
+            NVIDIA_NIM_MODEL: hasModel,
+          },
+          runtime: typeof process !== 'undefined' ? 'Node/Compat' : 'Worker Native'
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      },
       POST: async ({ request }) => {
     try {
       const body = await request.json();
