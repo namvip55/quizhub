@@ -25,6 +25,7 @@ import { Route as DashboardSubjectsRouteImport } from './routes/dashboard.subjec
 import { Route as DashboardResultsRouteImport } from './routes/dashboard.results'
 import { Route as DashboardImportRouteImport } from './routes/dashboard.import'
 import { Route as DashboardExamsRouteImport } from './routes/dashboard.exams'
+import { Route as ApiChatRouteImport } from './routes/api.chat'
 
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
@@ -106,6 +107,11 @@ const DashboardExamsRoute = DashboardExamsRouteImport.update({
   path: '/exams',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
+  '/api/chat': typeof ApiChatRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
+  '/api/chat': typeof ApiChatRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/student': typeof StudentRoute
+  '/api/chat': typeof ApiChatRoute
   '/dashboard/exams': typeof DashboardExamsRoute
   '/dashboard/import': typeof DashboardImportRoute
   '/dashboard/results': typeof DashboardResultsRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/student'
+    | '/api/chat'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/student'
+    | '/api/chat'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/student'
+    | '/api/chat'
     | '/dashboard/exams'
     | '/dashboard/import'
     | '/dashboard/results'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   StudentRoute: typeof StudentRoute
+  ApiChatRoute: typeof ApiChatRoute
   ExamAttemptIdRoute: typeof ExamAttemptIdRoute
   ExamCodeRoute: typeof ExamCodeRoute
   LobbyExamCodeRoute: typeof LobbyExamCodeRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardExamsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -375,6 +395,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   StudentRoute: StudentRoute,
+  ApiChatRoute: ApiChatRoute,
   ExamAttemptIdRoute: ExamAttemptIdRoute,
   ExamCodeRoute: ExamCodeRoute,
   LobbyExamCodeRoute: LobbyExamCodeRoute,

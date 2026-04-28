@@ -1,5 +1,4 @@
-import { json } from '@tanstack/react-start';
-import { createAPIFileRoute } from '@tanstack/react-start/api';
+import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
 // Request validation
@@ -37,7 +36,7 @@ function validateChatRequest(body: unknown): { valid: boolean; data?: ChatReques
       sessionId: req.sessionId as string | undefined,
       userId: req.userId as string | undefined,
       context: req.context as ChatRequest['context'],
-      stream: req.stream !== false, // Default to true
+      stream: req.stream !== false,
     },
   };
 }
@@ -83,8 +82,10 @@ async function streamNvidiaResponse(
       model,
       messages,
       stream: true,
-      max_tokens: 2048,
-      temperature: 0.7,
+      max_tokens: 16384,
+      temperature: 1,
+      top_p: 0.95,
+      chat_template_kwargs: { thinking: false },
     }),
   });
 
@@ -139,7 +140,6 @@ function parseSSEStream(nvidiaStream: ReadableStream<Uint8Array>): ReadableStrea
           }
         }
 
-        // Send final done message
         const doneChunk: StreamChunk = { type: 'done' };
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(doneChunk)}\n\n`));
         controller.close();
@@ -155,30 +155,29 @@ function parseSSEStream(nvidiaStream: ReadableStream<Uint8Array>): ReadableStrea
   });
 }
 
-export const APIRoute = createAPIFileRoute('/api/chat')({
-  POST: async ({ request }) => {
+export const Route = createFileRoute('/api/chat')({
+  // @ts-ignore - server property is valid in TanStack Start v1.167
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
     try {
-      // Parse and validate request
       const body = await request.json();
       const validation = validateChatRequest(body);
 
       if (!validation.valid) {
-        return json(
-          { success: false, error: validation.error },
-          { status: 400 }
-        );
+        return new Response(JSON.stringify({ error: validation.error }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
 
       const chatRequest = validation.data!;
-
-      // Build messages array
       const systemPrompt = buildSystemPrompt(chatRequest.context);
       const messages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: chatRequest.message },
       ];
 
-      // Stream response
       if (chatRequest.stream) {
         const nvidiaStream = await streamNvidiaResponse(messages);
         const sseStream = parseSSEStream(nvidiaStream);
@@ -192,7 +191,6 @@ export const APIRoute = createAPIFileRoute('/api/chat')({
         });
       }
 
-      // Non-streaming fallback
       const apiKey = process.env.NVIDIA_NIM_API_KEY;
       const baseUrl = process.env.NVIDIA_NIM_BASE_URL;
       const model = process.env.NVIDIA_NIM_MODEL;
@@ -211,8 +209,10 @@ export const APIRoute = createAPIFileRoute('/api/chat')({
           model,
           messages,
           stream: false,
-          max_tokens: 2048,
-          temperature: 0.7,
+          max_tokens: 16384,
+          temperature: 1,
+          top_p: 0.95,
+          chat_template_kwargs: { thinking: false },
         }),
       });
 
@@ -223,24 +223,32 @@ export const APIRoute = createAPIFileRoute('/api/chat')({
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || '';
 
-      return json({
-        success: true,
-        data: {
-          content,
-          messageId: crypto.randomUUID(),
-          sessionId: chatRequest.sessionId || crypto.randomUUID(),
-        },
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            content,
+            messageId: crypto.randomUUID(),
+            sessionId: chatRequest.sessionId || crypto.randomUUID(),
+          },
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     } catch (error) {
       console.error('Chat API error:', error);
-
-      return json(
-        {
-          success: false,
+      return new Response(
+        JSON.stringify({
           error: error instanceof Error ? error.message : 'Internal server error',
-        },
-        { status: 500 }
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
     }
+      },
+    },
   },
 });

@@ -93,10 +93,12 @@ export function useChatStream({
           old.map((msg) => (msg.id === tempUserId ? savedUserMessage : msg))
         );
 
-        // 3. Start SSE stream for assistant response
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        // 3. Call API endpoint for assistant response
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             message,
             sessionId,
@@ -108,30 +110,7 @@ export function useChatStream({
         });
 
         if (!response.ok) {
-          // Check if response is JSON or HTML
-          const contentType = response.headers.get("content-type");
-          let errorMessage = `HTTP ${response.status}`;
-
-          if (contentType?.includes("application/json")) {
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.error || errorMessage;
-            } catch {
-              errorMessage = `Server returned ${response.status}`;
-            }
-          } else if (contentType?.includes("text/html")) {
-            // HTML response means we hit the SPA fallback instead of the API
-            errorMessage = "API endpoint not found. Make sure to run 'npm run dev:all' to enable Cloudflare Pages Functions locally.";
-          } else {
-            try {
-              const text = await response.text();
-              errorMessage = text || errorMessage;
-            } catch {
-              errorMessage = `Server returned ${response.status}`;
-            }
-          }
-
-          throw new Error(errorMessage);
+          throw new Error(`Server function failed: ${response.status}`);
         }
 
         // 4. Parse SSE stream

@@ -14,7 +14,16 @@
       "Bash(netstat -ano)",
       "Bash(claude doctor *)",
       "Bash(npm install *)",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/api/chat -X POST -H \"Content-Type: application/json\" -d '{\"message\":\"test\"}')",
+      "Bash(curl *)",
+      "WebSearch",
+      "Bash(npm list *)",
+      "Bash(npx wrangler *)",
+      "Bash(npx tsc *)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__list_tables"
     ]
   }
 }

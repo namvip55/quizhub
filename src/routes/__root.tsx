@@ -6,10 +6,10 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
-import { AIChatWidget } from "@/components/chat";
+import { AIChatWidget } from "@/components/chat/AIChatWidget.client";
 
 import appCss from "../styles.css?url";
 
@@ -81,6 +81,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const [isClient, setIsClient] = useState(false);
+
   // #region agent log
   useEffect(() => {
     console.warn("[agent log]", {
@@ -107,6 +109,11 @@ function RootComponent() {
   }, []);
   // #endregion agent log
 
+  // Only render chat widget on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <AuthProvider>
       {import.meta.env.DEV && (
@@ -116,7 +123,7 @@ function RootComponent() {
       )}
       <Outlet />
       <Toaster richColors closeButton position="top-right" theme="dark" />
-      <AIChatWidget />
+      {isClient && <AIChatWidget />}
     </AuthProvider>
   );
 }
