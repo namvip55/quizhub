@@ -1,8 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
+// @ts-ignore
+import { env as cfEnv } from 'cloudflare:workers';
+
 // Request validation
 function validateChatRequest(body: unknown): { valid: boolean; data?: ChatRequest; error?: string } {
+// ... (rest of validation same)
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Invalid request body' };
   }
@@ -166,6 +170,44 @@ export const Route = createFileRoute('/api/chat')({
   // @ts-ignore - server property is valid in TanStack Start v1.167
   server: {
     handlers: {
+      GET: async () => {
+        const pEnv = typeof process !== 'undefined' ? process.env : {};
+        const gEnv = (globalThis as any).env || {};
+        const gThis = globalThis as any;
+        
+        // List of places we check
+        const checks = {
+          cf_workers_env: {
+            API_KEY: !!(cfEnv && cfEnv.NVIDIA_NIM_API_KEY),
+            BASE_URL: !!(cfEnv && cfEnv.NVIDIA_NIM_BASE_URL),
+            MODEL: !!(cfEnv && cfEnv.NVIDIA_NIM_MODEL),
+          },
+          process_env: {
+            API_KEY: !!pEnv.NVIDIA_NIM_API_KEY,
+            BASE_URL: !!pEnv.NVIDIA_NIM_BASE_URL,
+            MODEL: !!pEnv.NVIDIA_NIM_MODEL,
+          },
+          globalThis_env: {
+            API_KEY: !!gEnv.NVIDIA_NIM_API_KEY,
+            BASE_URL: !!gEnv.NVIDIA_NIM_BASE_URL,
+            MODEL: !!gEnv.NVIDIA_NIM_MODEL,
+          },
+          globalThis_direct: {
+            API_KEY: !!gThis.NVIDIA_NIM_API_KEY,
+            BASE_URL: !!gThis.NVIDIA_NIM_BASE_URL,
+            MODEL: !!gThis.NVIDIA_NIM_MODEL,
+          }
+        };
+
+        return new Response(JSON.stringify({ 
+          status: 'Chat API Diagnostics v2',
+          checks,
+          hasCfEnv: !!cfEnv,
+          runtime: typeof process !== 'undefined' ? 'Node/Compat' : 'Worker Native'
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      },
       POST: async ({ request }) => {
     try {
       const body = await request.json();
@@ -191,8 +233,10 @@ export const Route = createFileRoute('/api/chat')({
         const gEnv = (globalThis as any).env || {};
         const gThis = globalThis as any;
         const iEnv = import.meta.env as any;
-
-        return pEnv[name] || gEnv[name] || gThis[name] || iEnv[name];
+        
+        // Try cloudflare:workers env first, then others
+        const val = (cfEnv && cfEnv[name]) || pEnv[name] || gEnv[name] || gThis[name] || iEnv[name];
+        return val;
       };
 
       if (chatRequest.stream) {
@@ -201,7 +245,7 @@ export const Route = createFileRoute('/api/chat')({
         const model = getEnvVar('NVIDIA_NIM_MODEL');
 
         if (!apiKey || !baseUrl || !model) {
-          throw new Error('NVIDIA NIM environment variables not configured on server');
+          throw new Error(`Missing NVIDIA NIM environment variables: ${!apiKey ? 'API_KEY ' : ''}${!baseUrl ? 'BASE_URL ' : ''}${!model ? 'MODEL' : ''}`);
         }
 
         const nvidiaStream = await fetch(`${baseUrl}/chat/completions`, {
