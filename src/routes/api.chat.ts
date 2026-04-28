@@ -20,9 +20,15 @@ function getEnvVar(name: string, context?: any): string | undefined {
     return process.env[name];
   }
 
-  // 4. Vite import.meta.env (build-time)
-  if (typeof import !== 'undefined' && (import.meta as any).env?.[name]) {
-    return (import.meta as any).env[name];
+  // 4. Vite import.meta.env (build-time) - safe check using try-catch
+  try {
+    // @ts-ignore - import.meta is only available in Vite builds
+    if ((import.meta as any).env?.[name]) {
+      // @ts-ignore
+      return (import.meta as any).env[name];
+    }
+  } catch (e) {
+    // import.meta not available in this environment (e.g., Node.js runtime)
   }
 
   return undefined;
