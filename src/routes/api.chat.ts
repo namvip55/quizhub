@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import type { ChatRequest, StreamChunk } from '@/types/chat.types';
 
 // Helper to get environment variables in both Node.js and Cloudflare Workers
-async function getEnvVar(name: string, context?: any): Promise<string | undefined> {
+function getEnvVar(name: string, context?: any): string | undefined {
   const viteName = `VITE_${name}`;
 
   // Priority order for environment variable access:
@@ -15,18 +15,6 @@ async function getEnvVar(name: string, context?: any): Promise<string | undefine
     if (viteEnv?.[viteName]) return viteEnv[viteName];
   } catch (e) {
     // import.meta not available in this environment
-  }
-
-  // 1.5 Cloudflare Workers native module (recommended for CF)
-  try {
-    // @ts-ignore
-    const cf = await import('cloudflare:workers');
-    if (cf?.env) {
-      if (cf.env[name]) return cf.env[name];
-      if (cf.env[viteName]) return cf.env[viteName];
-    }
-  } catch (e) {
-    // Not running in Cloudflare or plugin missing
   }
 
   // 2. Cloudflare global env (Worker runtime)
