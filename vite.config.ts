@@ -10,6 +10,11 @@ import path from "node:path";
 
 export default defineConfig({
   vite: {
+    define: {
+      'import.meta.env.VITE_NVIDIA_NIM_API_KEY': JSON.stringify(process.env.VITE_NVIDIA_NIM_API_KEY || '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'),
+      'import.meta.env.VITE_NVIDIA_NIM_BASE_URL': JSON.stringify(process.env.VITE_NVIDIA_NIM_BASE_URL || 'https://integrate.api.nvidia.com/v1'),
+      'import.meta.env.VITE_NVIDIA_NIM_MODEL': JSON.stringify(process.env.VITE_NVIDIA_NIM_MODEL || 'deepseek-ai/deepseek-v4-pro'),
+    },
     plugins: [
       {
         name: "agent-log-proxy",

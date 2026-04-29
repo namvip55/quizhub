@@ -5,6 +5,7 @@
   "pages_build_output_dir": "dist/client",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
+    "VITE_NVIDIA_NIM_API_KEY": "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",
     "VITE_NVIDIA_NIM_BASE_URL": "https://integrate.api.nvidia.com/v1",
     "VITE_NVIDIA_NIM_MODEL": "deepseek-ai/deepseek-v4-pro",
     "SUPABASE_URL": "https://inyqkjsdcwifzhxayjmo.supabase.co",

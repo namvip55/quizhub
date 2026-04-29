@@ -7,7 +7,18 @@ function getEnvVar(name: string, context?: any): string | undefined {
 
   // Priority order for environment variable access:
 
-  // 1. Vite import.meta.env (build-time) - PRIMARY for TanStack Start on Cloudflare
+  // 1. Cloudflare Workers context (passed via handler) - PRIMARY for runtime
+  if (context?.env?.[name]) return context.env[name];
+  if (context?.env?.[viteName]) return context.env[viteName];
+  if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
+  if (context?.cloudflare?.env?.[viteName]) return context.cloudflare.env[viteName];
+
+  // 2. Cloudflare global env (Worker runtime)
+  const gThis = globalThis as any;
+  if (gThis.env?.[name]) return gThis.env[name];
+  if (gThis.env?.[viteName]) return gThis.env[viteName];
+
+  // 3. Vite import.meta.env (build-time)
   try {
     // @ts-ignore - import.meta is only available in Vite builds
     const viteEnv = (import.meta as any).env;
@@ -16,17 +27,6 @@ function getEnvVar(name: string, context?: any): string | undefined {
   } catch (e) {
     // import.meta not available in this environment
   }
-
-  // 2. Cloudflare global env (Worker runtime)
-  const gThis = globalThis as any;
-  if (gThis.env?.[name]) return gThis.env[name];
-  if (gThis.env?.[viteName]) return gThis.env[viteName];
-
-  // 3. Cloudflare Workers context (passed via handler)
-  if (context?.env?.[name]) return context.env[name];
-  if (context?.env?.[viteName]) return context.env[viteName];
-  if (context?.cloudflare?.env?.[name]) return context.cloudflare.env[name];
-  if (context?.cloudflare?.env?.[viteName]) return context.cloudflare.env[viteName];
 
   // 4. Node.js process.env (local development)
   if (typeof process !== 'undefined' && process.env) {
@@ -120,18 +120,15 @@ export const Route = createFileRoute('/api/chat')({
             { role: 'user', content: chatRequest.message },
           ];
 
-          // Get environment variables with context (Cloudflare Workers passes env via context)
-          const apiKey = await getEnvVar('NVIDIA_NIM_API_KEY', context);
-          const baseUrl = await getEnvVar('NVIDIA_NIM_BASE_URL', context);
-          const model = await getEnvVar('NVIDIA_NIM_MODEL', context);
+          // Access environment variables directly from import.meta.env
+          // @ts-ignore
+          const importMetaEnv = (import.meta as any).env || {};
+
+          const apiKey = importMetaEnv.VITE_NVIDIA_NIM_API_KEY;
+          const baseUrl = importMetaEnv.VITE_NVIDIA_NIM_BASE_URL;
+          const model = importMetaEnv.VITE_NVIDIA_NIM_MODEL;
 
           if (!apiKey || !baseUrl || !model) {
-            const gThis = globalThis as any;
-            let importMetaEnv: any = null;
-            try {
-              importMetaEnv = (import.meta as any).env;
-            } catch (e) {}
-
             return new Response(
               JSON.stringify({
                 error: 'Server configuration error: NVIDIA API environment variables not configured',
@@ -141,15 +138,8 @@ export const Route = createFileRoute('/api/chat')({
                     baseUrl: !baseUrl,
                     model: !model
                   },
-                  runtime: typeof process !== 'undefined' ? 'Node' : 'Worker',
-                  hasContext: !!context,
-                  contextKeys: context ? Object.keys(context) : [],
-                  hasCfInContext: !!context?.cloudflare,
-                  hasEnvInContext: !!context?.env,
-                  hasGlobalEnv: !!gThis.env,
-                  globalEnvKeys: gThis.env ? Object.keys(gThis.env) : [],
-                  hasImportMetaEnv: !!importMetaEnv,
-                  importMetaEnvKeys: importMetaEnv ? Object.keys(importMetaEnv).filter(k => k.includes('NVIDIA') || k.includes('VITE')) : []
+                  importMetaEnvKeys: Object.keys(importMetaEnv),
+                  allImportMetaEnv: importMetaEnv
                 }
               }),
               {
